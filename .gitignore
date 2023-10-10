@@ -2,3 +2,5 @@
 log.html
 report.html
 output.xml
+.vscode
+.mypy_cache

@@ -1,0 +1,5 @@
+loguru @ file:///home/conda/feedstock_root/build_artifacts/loguru_1695547342418/work
+PyYAML @ file:///home/conda/feedstock_root/build_artifacts/pyyaml_1695373450623/work
+robotframework @ file:///home/conda/feedstock_root/build_artifacts/robotframework-split_1690576110961/work/dist
+setuptools==68.2.2
+wheel==0.41.2

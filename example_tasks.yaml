@@ -1,0 +1,41 @@
+global:
+  version_check: true
+  bt_check: true
+  single_wire_check: true
+  wear_detection_check: true
+
+tasks:
+  - name: version_check
+    workflow:
+      - require: [equal, version_check, true]
+      - timeout: 5
+      - capture: The Firmware rev is {{var_version}}
+      - ensure:  [equal, var_version, 2.0.9.0]
+
+  - name: single_wire_cmd_some
+    workflow:
+      - require: [equal, single_wire_check, true]
+      - timeout: 5
+      - call: heartbeat
+      - capture: 'case: VERSO_COMM_{{var_cmd}}'
+      - ensure: [equal, var_cmd, EVENT_HEARTBEAT]
+      - timeout: 3
+      - call: heartbeat
+      - capture: 'case: VERSO_COMM_{{var_cmd}}'
+      - ensure: [equal, var_cmd, CASE_OPEN]
+
+  - name: left_side_wear_off_wear_on
+    environment:
+      - set: [LEFT_BOX_STATE, OUT_BOX_WEARED]
+      - set: [DUMMY_VARIABLE, DUMMY_VALUE]
+    workflow:
+      - require: [equal, wear_detection_check, true]
+      - timeout: 5
+      - ensure: [equal, LEFT_BOX_STATE, OUT_BOX_WEARED]
+      - call: left_side_wear_off
+      - capture: '[box_state]:local={{var_box_state}}'
+      - ensure: [equal, var_box_state, OUT_BOX]
+      - timeout: 2
+      - call: left_side_wear_on
+      - capture: '[box_state]:local={{var_box_state}}'
+      - ensure: [equal, var_box_state, OUT_BOX_WEARED]
