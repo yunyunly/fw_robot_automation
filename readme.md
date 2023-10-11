@@ -3,8 +3,29 @@
 You must install a python virtual environment to avoid broken of you python while setting up robot framework.
 The main reason comes from library dependency.
 
-Install conda.
-Install Python 3.10.13 via conda 
+Install pyenv
+```shell
+git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+cd ~/.pyenv
+git pull
+
+# add it to shell config 
+set -gx PYENV_ROOT {$HOME}/.pyenv
+set -gx PATH $PATH {$PYENV_ROOT}/bin
+pyenv init - | source 
+# 
+
+pyenv rehash
+pyenv install -v 3.10.13
+
+```
+
+Config pyenv for robot
+```shell
+cd ~/.../robot
+pyenv local 3.10.13
+pyenv versions
+```
 
 ## Step2 install robotframework
 `pip install robotframework`
@@ -12,6 +33,8 @@ Install Python 3.10.13 via conda
 ## Step3 install useful python lib 
 `pip install -r requirements.txt`
 
+## Step4 try robot
+`cd echo && robot test_xyz.robot`
 
 
 # Rpi Env Setup
@@ -44,7 +67,8 @@ sudo apt-get upgrade
 
 ```
 ## Step2 local editor
-
+`vim`
+editors supported for aarch64 are limited
 ## Step3 Transfer file via LAN 
 sftp config: 
 machine: rpi.local 
@@ -52,3 +76,4 @@ username: firmware
 password: orka 
 port: 22
 
+windows tools: FileZilla
