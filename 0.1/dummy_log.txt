@@ -1,0 +1,24 @@
+[2023-09-20 18:01:58.236439] I am a line of log
+[2023-09-20 18:01:58.236439] I am a line of log
+[2023-09-20 18:01:58.236439] I am a line of log
+[2023-09-20 18:01:58.236448] The Firmware rev is 2.0.9.0
+[2023-09-20 18:01:58.236469] I am a line of log 
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] case: VERSO_COMM_EVENT_HEARTBEAT
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236469] I am a line of log
+[2023-09-20 18:01:58.236478] I am a line of log
+[2023-09-20 18:01:58.236478] I am a line of log
+[2023-09-20 18:01:58.236478] case: VERSO_COMM_CASE_OPEN
+[2023-09-20 18:01:58.236478] I am a line of log
+[2023-09-20 18:01:58.236478] I am a line of log
+[2023-09-20 18:01:58.236478] [box_state]:local=OUT_BOX
+[2023-09-20 18:01:58.236478] I am a line of log
+[2023-09-20 18:01:58.236478] [box_state]:local=OUT_BOX_WEARED
+[2023-09-20 18:01:58.236478] I am a line of log
+[2023-09-20 18:01:58.236478] I am a line of log
