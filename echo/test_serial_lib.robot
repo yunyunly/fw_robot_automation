@@ -36,7 +36,7 @@ Wait string
 	Should Be Equal		${data}		case open 
 
 Wait string regex 
-	${data}=		Serial Listen For String Regex 	send event (d+) 	timeout=${5}
+	${data}=		Serial Listen For String Regex 	send event (\d+) 	timeout=${5}
 	Should Be Equal 	${data}		2
 Write string 
 	Serial Write	abcedfg 

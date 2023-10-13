@@ -120,9 +120,9 @@ class SerialLib(object):
             start_time = time.time()
             while True:
                 data = self._serial.readline().decode().strip()
-                
-                if expected in data:
-                    return data
+                match = re.search(expected, data)
+                if match:
+                    return match.groups()
                 
                 if timeout is not None and time.time() - start_time >= timeout:
                     return None
@@ -150,7 +150,7 @@ class SerialLib(object):
             start_time = time.time()
             while True:
                 data = self._serial.readline().decode().strip()
-                match = re.match(data_pattern, data)
+                match = re.search(data_pattern, data)
                 
                 if match:
                     return match.groups()
