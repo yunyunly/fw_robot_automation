@@ -1,4 +1,6 @@
+robotframework
 invoke 
 requests
 rellu 
 docutils 
+pyserial

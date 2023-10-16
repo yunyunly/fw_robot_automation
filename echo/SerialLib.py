@@ -243,7 +243,4 @@ if __name__ == "__main__":
         print("blocking", sl.serial_read_blocking())
     for i in range(1, 5):
         print("string", sl.serial_read_until("heartbeat"))
-
-    for i in range(1,5):
-        print("regex", sl.serial_read_until_regex(r'heart(.)'))
     sl.close_serial_port()

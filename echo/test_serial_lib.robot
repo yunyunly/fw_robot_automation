@@ -6,6 +6,11 @@ Test Setup        Open Serial Port    /dev/ttyACM0    115200
 Test Teardown     Close Serial Port
 Default Tags      Serial
 Library           SerialLib.py
+=======
+...							All keywords constructed from ``SerialLib.py``.
+Library 				SerialLib.py 
+Test Setup 			Open Serial Port 	/dev/ttyACM0 		115200 
+Test Teardown 	Stop Serial Port 
 
 *** Test Cases ***
 Open and close serial port
