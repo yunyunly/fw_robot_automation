@@ -10,6 +10,8 @@ class Logger(object):
         self._opened = False 
         self._wait_new_line = False
         self._has_new_line = threading.Semaphore(0)
+        self._readed = None 
+        self._logs = []
         return 
     
     @staticmethod
