@@ -6,11 +6,6 @@ Test Setup        Open Serial Port    /dev/ttyACM0    115200
 Test Teardown     Close Serial Port
 Default Tags      Serial
 Library           SerialLib.py
-=======
-...							All keywords constructed from ``SerialLib.py``.
-Library 				SerialLib.py 
-Test Setup 			Open Serial Port 	/dev/ttyACM0 		115200 
-Test Teardown 	Stop Serial Port 
 
 *** Test Cases ***
 Open and close serial port
@@ -44,10 +39,10 @@ Serial read blocking
 Serial read until string
     ${line} =    Serial Read Until    heartbeat
 
-Serial read until regex
+Serial read until regex match string
     [Tags]    Serial
     ${ret}=    Serial Read Until Regex    heart(.)
-    Should Be Equal    ${ret}[0]     b
+    Should Be Equal    ${ret}[0]    b
 
 Serial write string
     Serial Write String    abcdefg
@@ -55,22 +50,32 @@ Serial write string
 Serial write hex
     Serial Write Hex    ff00
 
+Serial read until regex match int
+    [Tags]    Serial
+    ${ret}=    Serial Read Until Regex    send event ([0-9]+)
+    Should Be Equal    ${ret}[0]    255
+
+Serial read until regex match float
+    [Tags]    Serial
+    ${ret}=    Serial Read Until Regex    new curr: ([+-]?[0-9]+\\.[0-9]+)
+    Should Be True    ${ret}[0] < 32
+
 *** Keywords ***
 Read Until Regex
     Log    Deprecated
-    # [Arguments]    ${pattern}
-    # ${ret}    Set Variable    null
-    # WHILE    True
-        # ${newline}=    Serial Read Newest
-        # IF    "${newline}" == "${None}"
+    # [Arguments] \ \ \ ${pattern}
+    # ${ret} \ \ \ Set Variable \ \ \ null
+    # WHILE \ \ \ True
+        # ${newline}= \ \ \ Serial Read Newest
+        # IF \ \ \ "${newline}" == "${None}"
             # CONTINUE
         # END
-        # IF    "${newline}" == ""
+        # IF \ \ \ "${newline}" == ""
             # CONTINUE
         # END
-        # ${ret}=    Should Match Regexp    ${newline}    ${pattern}
-        # IF    "${ret}" != "${None}"
+        # ${ret}= \ \ \ Should Match Regexp \ \ \ ${newline} \ \ \ ${pattern}
+        # IF \ \ \ "${ret}" != "${None}"
             # BREAK
         # END
     # END
-    # RETURN    ${ret}
+    # RETURN \ \ \ ${ret}
