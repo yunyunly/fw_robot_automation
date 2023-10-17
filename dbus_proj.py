@@ -1,9 +1,6 @@
-import dbus
-import dbus.exceptions
-import dbus.mainloop.glib
-import gi
 import time
-from gi.repository import GLib
+import dbus
+import dbus.mainloop.glib
 
 class BluetoothController:
     def __init__(self):
@@ -103,7 +100,7 @@ if __name__ == '__main__':
         print(f'Received GATT command: {value}')
 
     controller = BluetoothController()
-    device_address = '00:00:00:00:00:00'  # Replace with the BLE device address you want to connect to
+    device_address = 'D8:3A:DD:5C:0A:B3'  # Replace with the BLE device address you want to connect to
 
     if controller.is_device_existed(device_address):
         controller.connect_to_device(device_address)
