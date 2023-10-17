@@ -1,4 +1,16 @@
 import BluetoothLib 
+import json 
+
+""" 
+def struct{
+    u16 cmd_id
+    u16 cmd_params
+    u8  params[16]
+}
+"""
+
+raw_map_file = open("bluepigeon_defs.json")
+cmd_map = json.load(raw_map_file)
 
 
 class ChargingCaseLib(object):
@@ -10,6 +22,10 @@ class ChargingCaseLib(object):
     def __init__(self):
         return 
     
+    def _send(self, cmd):
+
+        return 
+
     def print_info(self):
         """Print common information of charging case via serial port  
         
