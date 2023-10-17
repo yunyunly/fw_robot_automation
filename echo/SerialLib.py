@@ -10,7 +10,7 @@ class Logger(object):
         self._opened = False 
         self._wait_new_line = False
         self._has_new_line = threading.Semaphore(0)
-        self._readed = None 
+        self._readed = 0
         self._logs = []
         return 
     
@@ -35,7 +35,6 @@ class Logger(object):
                     self.pr("notify wait flag...")
                     self._wait_new_line = False
                     self._has_new_line.release()
-
             except:
                 newline = "serial closed"
             timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')
@@ -50,28 +49,32 @@ class Logger(object):
         self._io = threading.Thread(target=self._io_handler)
         self._opened = True 
         self._io.start()
-        self._readed = -1
+        self._readed = 0
 
     def close(self):
         self._opened = False
         self._serial.close()
         self._io.join()
 
-    def read_latest(self):
-        if len(self._logs) == 0:
+    def read_latest(self)->str|None:
+        if len(self._logs) == self._readed:
             return None 
-        idx = len(self._logs)-1
-        self._readed = idx 
-        return self._logs[idx]
+        newline = self._logs[self._readed]
+        self._readed += 1
+        return newline
     
-    def read_latest_blocking(self):
+    def read_latest_blocking(self)->str:
+        while self.read_latest() == None:
+            time.sleep(0.05)
         self._wait_new_line = True 
         self._has_new_line.acquire()
-        return self.read_latest()
 
-    def read_newest(self):
-        if (self._readed + 1) == len(self._logs):
-            return None 
+        newline = self.read_latest()
+        if newline == None:
+            raise TypeError("Should not be None type")
+        return newline
+
+    def read_newest(self)->str|None:
         return self.read_latest()
     
     def write_string(self, data):
@@ -87,8 +90,8 @@ class Logger(object):
             print("filepath not implemented yet")
             pass
         else:
-            timestamp = datetime.datetime.now().strftime('%d_%H:%M:%S.%f')
-            filename = f"log_{timestamp}.txt"
+            timestamp = datetime.datetime.now().strftime('%d:%H:%M:%S')
+            filename = f"log-{timestamp}.txt"
             with open(filename, "a") as file:
                 for log_entry in self._logs:
                     file.write(log_entry+"\n")
@@ -121,11 +124,14 @@ class SerialLib(object):
         """
         self._logger.open(port, bard_rate)
 
+    def save(self, filepath=None):
+        self._logger.save(filepath)
+
     def close_serial_port(self):
         """Close current serial port.
 
         Examples:
-        | Stop Serial Port|
+        | Close Serial Port|
         """
         self._logger.close()
     
@@ -155,7 +161,7 @@ class SerialLib(object):
         """
         return self._logger.read_newest()
     
-    def serial_read_blocking(self):
+    def serial_read_blocking(self)->str:
         return self._logger.read_latest_blocking()
 
     def serial_write_string(self, data):
@@ -189,8 +195,6 @@ class SerialLib(object):
         start_time = time.time()
         while True:
             newline = self.serial_read_blocking()
-            if newline == None:
-                continue
             match = re.search(expected, newline)
 
             if match:
@@ -219,8 +223,6 @@ class SerialLib(object):
         start_time = time.time()
         while True:
             newline = self.serial_read_blocking()
-            if newline == None:
-                continue
             print("regex get nl", newline)
             match = re.search(data_pattern, newline)
 
@@ -245,4 +247,8 @@ if __name__ == "__main__":
         print("blocking", sl.serial_read_blocking())
     for i in range(1, 5):
         print("string", sl.serial_read_until("heartbeat"))
+
+    for i in range (1, 5):
+        print("int", sl.serial_read_until_regex("shutdown count down ([0-9]+)"))
+    sl.save()
     sl.close_serial_port()

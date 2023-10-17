@@ -40,25 +40,22 @@ Serial read until string
     ${line} =    Serial Read Until    heartbeat
 
 Serial read until regex match string
-    [Tags]    Serial
     ${ret}=    Serial Read Until Regex    heart(.)
     Should Be Equal    ${ret}[0]    b
+
+Serial read until regex match int
+    ${ret}=    Serial Read Until Regex    send event ([0-9]+)
+    Should Be Equal    ${ret}[0]    255
+
+Serial read until regex match float
+    ${ret}=    Serial Read Until Regex    new curr: ([+-]?[0-9]+\\.[0-9]+)
+    Should Be True    ${ret}[0] < 32
 
 Serial write string
     Serial Write String    abcdefg
 
 Serial write hex
     Serial Write Hex    ff00
-
-Serial read until regex match int
-    [Tags]    Serial
-    ${ret}=    Serial Read Until Regex    send event ([0-9]+)
-    Should Be Equal    ${ret}[0]    255
-
-Serial read until regex match float
-    [Tags]    Serial
-    ${ret}=    Serial Read Until Regex    new curr: ([+-]?[0-9]+\\.[0-9]+)
-    Should Be True    ${ret}[0] < 32
 
 *** Keywords ***
 Read Until Regex
