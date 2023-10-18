@@ -1,5 +1,9 @@
 import time
 import dbus
+import pgi 
+pgi.install_as_gi()
+from gi.repository import GLib
+from dbus import mainloop
 import dbus.mainloop.glib
 
 class BluetoothController:
@@ -96,23 +100,76 @@ class BluetoothController:
         )
 
 if __name__ == '__main__':
-    def gatt_callback(value):
-        print(f'Received GATT command: {value}')
+        # def gatt_callback(value):
+        #     print(f'Received GATT command: {value}')
+        #
+        # controller = BluetoothController()
+        # device_address = 'D8:3A:DD:5C:0A:B3'  # Replace with the BLE device address you want to connect to
+        #
+        # if controller.is_device_existed(device_address):
+        #     controller.connect_to_device(device_address)
+        #     controller.register_gatt_callback(device_address, gatt_callback)
+        #     print(f'Connected to device with address: {device_address}')
+        #     print('Listening for GATT commands. Press Ctrl+C to exit.')
+        #     try:
+        #         while True:
+        #             time.sleep(1)  # Keep the program running
+        #     except KeyboardInterrupt:
+        #         pass
+        #     finally:
+        #         controller.disconnect_device()
+        # else:
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default = True)
+    sys_bus = dbus.SystemBus()
+    print("SystemBus :", sys_bus)
+    
+    # get bluez object
+    bluezObj = sys_bus.get_object("org.bluez", "/org/bluez")
 
-    controller = BluetoothController()
-    device_address = 'D8:3A:DD:5C:0A:B3'  # Replace with the BLE device address you want to connect to
+    dev_addr = "D0:14:11:20:20:18"
+    dev_path = f'/org/bluez/hci0/dev_{dev_addr.replace(":", "_")}'
+    # get device1 interface
+    dev_obj = sys_bus.get_object("org.bluez", dev_path)
+    dev_if = dbus.Interface(sys_bus.get_object("org.bluez", dev_path), "org.bluez.Device1")
+    dev_prop = dbus.Interface(dev_if, "org.freedesktop.DBus.Properties")
+    print("dev Name :", dev_prop.Get("org.bluez.Device1", "Name"))
+    print("dev All :", dev_prop.GetAll("org.bluez.Device1"))
+    char_path = f'{dev_path}/service0019/char001a' 
+    # get gatt interface
+    char_obj = sys_bus.get_object("org.bluez", char_path)
+    char_if = dbus.Interface(sys_bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
+    print("dev if:", dev_if)
+    print("char if:", char_if)
+    #print(char_if.get_dbus_method("Connect", dbus_interface="org.bluez.Device1")(["ee","as"]))
+    #dev_if.Connect()
+    print("dict", char_if.ReadValue.__dict__)
+    print("dir", char_if.ReadValue.__dir__())
+    #help(char_if.ReadValue)
+    #dbus.Interface(sys_bus.get_object("org.bluez", )
+    print(char_obj.ReadValue("", dbus_interface="org.bluez.GattCharacteristic1"))
+    print(char_obj.WriteValue(bytearray([00,00,00]), {}, dbus_interface="org.bluez.GattCharacteristic1"))
+    #mainloop = GLib.MainLoop()
+    #mainloop.run()
+    #char_if.StartNotify()
+    # --
+    #bluezIf = dbus.Interface(bluezObj, "org.freedesktop.DBus.ObjectManager")
+    #print(bluezIf)
 
-    if controller.is_device_existed(device_address):
-        controller.connect_to_device(device_address)
-        controller.register_gatt_callback(device_address, gatt_callback)
-        print(f'Connected to device with address: {device_address}')
-        print('Listening for GATT commands. Press Ctrl+C to exit.')
-        try:
-            while True:
-                time.sleep(1)  # Keep the program running
-        except KeyboardInterrupt:
-            pass
-        finally:
-            controller.disconnect_device()
-    else:
-        print(f'Device with address {device_address} not found.')
+    # --
+    #bluezObjs = bluezIf.GetManagedObjects()
+    #print(type(bluezObjs))
+    #print(bluezObjs.__dir__())
+    #adapter_path = "/org/bluez/hci0"
+    #for k, v in bluezObjs.items():
+        
+        #char_uuid = v.get("org.bluez.GattCharacteristic1", {}).get("UUID")
+        # if char_uuid == "21212121-2121-2121-2121-212121212121":         
+        #print("path/UUID", k, char_uuid)
+    
+    
+
+        # device_path = f'{self.adapter_path}/{device_address.replace(":", "_")}'
+        #     device = dbus.Interface(self.bus.get_object('org.bluez', device_path), self.device_interface)
+        #     device.Connect()
+        #     self.connected_device = device
+
