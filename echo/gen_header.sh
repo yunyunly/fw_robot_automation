@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Define the input JSON configuration file
-JSON_CONFIG="bluepigeon_defs.json"
+JSON_CONFIG="blue_pigeon_defs.json"
 
-OUTPUT_FILE="bluepigeon_defs.h"
+OUTPUT_FILE="blue_pigeon_defs.h"
 
 rm $OUTPUT_FILE
 
