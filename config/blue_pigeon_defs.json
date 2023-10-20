@@ -20,7 +20,8 @@
     "Request Battery Left": "0x11",
     "Request Battery Right": "0x12",
     "Connect Hearing Aids": "0x13",
-    "Disconnect Hearing Aids": "0x14"
+    "Disconnect Hearing Aids": "0x14",
+    "Not Implemented Yet": "0xff"
   },
   "robote": {
     "Print Info": "0x00",

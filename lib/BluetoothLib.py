@@ -3,6 +3,7 @@ import dbus
     
 
 class BluetoothLib(object):
+    charging_case_header = 9
     def __init__(self):
         self.bus = dbus.SystemBus()
         print("SystemBus :", self.bus)
@@ -56,6 +57,17 @@ class BluetoothLib(object):
     
     def read(self, iface):
         return iface.ReadValue("")
+ 
+    def ble_connect_case(self, addr = "D0:14:11:20:20:18"):
+        self.case, self.case_path = self.connect(addr)
+        char_path = f'{self.case_path}/service0019/char001a' 
+        cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
+        while not cached:
+            print("Discovery service and characteristic")
+            time.sleep(1)
+            cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
+        self.case_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
+        return 
     
     def ble_connect_hearing_aids(self, addr = "D0:14:11:20:20:18"):
         self.hearing_aids, self.hearing_aids_path = self.connect(addr)
@@ -68,25 +80,14 @@ class BluetoothLib(object):
         self.hearing_aids_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
         return 
 
-    def ble_connect_case(self, addr = "D0:14:11:20:20:18"):
-        self.case, self.case_path = self.connect(addr)
-        char_path = f'{self.case_path}/service0019/char001a' 
-        cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        while not cached:
-            print("Discovery service and characteristic")
-            time.sleep(1)
-            cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        self.case_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
+    def ble_disconnect_hearing_aids(self):
         return 
 
     def ble_disconnect_case(self):
         return 
 
-    def bel_disconnect_hearing_aids(self):
-        return 
-
     def ble_send_case(self, data):
-        self.send(self.case_char_if, data)
+        self.send(self.case_char_if, [self.charging_case_header] + data)
         return     
 
     def ble_send_hearing_aids(self, data):
@@ -98,5 +99,9 @@ class BluetoothLib(object):
 if __name__ == "__main__":
     ble = BluetoothLib()
     ble.ble_connect_case("D0:14:11:20:20:18")
-    ble.ble_send_case([00,2,3])
+    header = [9]
+    cmd = [0,0]
+    desc = [0,0]
+    param = [] 
+    ble.ble_send_case(header+cmd+desc+param)
 
