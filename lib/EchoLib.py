@@ -1,4 +1,4 @@
-import BluetoothLib 
+from BluetoothLib import BluetoothLib 
 import json 
 
 """ 
@@ -25,6 +25,10 @@ class ChargingCaseLib(object):
     def _send(self, cmd):
 
         return 
+    
+    def connect_case(self, addr="D0:14:11:20:20:18"):
+        self.blue = BluetoothLib()
+        self.blue.ble_connect_case(addr)
 
     def print_info(self):
         """Print common information of charging case via serial port  
@@ -33,6 +37,7 @@ class ChargingCaseLib(object):
         Examples:
         |Print Info|
         """
+        self.blue.ble_send_case([01,00,00])
         return 
     
     def plug_in(self):
