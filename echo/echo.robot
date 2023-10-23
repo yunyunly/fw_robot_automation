@@ -1,15 +1,32 @@
 *** Settings ***
-Suite Setup       Connect Case
-Suite Teardown    Disconnect Case
+Library           ${CURDIR}/../lib/ChargingCaseLib.py
+Library           ${CURDIR}/../lib/SerialLib.py
+Suite Setup       
+Suite Teardown     
 Test Setup        Open Serial Port    /dev/ttyACM0    115200
 Test Teardown     Close Serial Port
-Library           ../lib/EchoLib.py
-Library           ../lib/SerialLib.py
+
+
+*** Keywords ***
+Infra Connect Case
+  Connect Charging Case  D0:14:11:20:20:10
+
+Infra Disconnect Case 
+  Disconnect Charging Case 
 
 *** Test Cases ***
+Connect case 
+    &{all libs}=  Get library instance  all=True
+    Log   ${all libs}
+    Serial Write Hex             abcd
+    Connect Charging Case     
+
 Print information
+    Connect Charging Case    
     Print Info
-    Serial Read Until Regex    [BluePig] SOC (\\d+)
+    ${matched}=   Serial Read Until Regex  SOC ([0-9]+) Volt ([0-9]+)
+    Log   ${matched}
+    Serial Save
 
 Case open 
     Case Open 
@@ -33,7 +50,6 @@ Case connect hearing aids
 Case disconnect hearing aids 
     Case Disconnect Hearing Aids 
     Serial Read Until Regex   [BluePig]
-
 
 Case close charge hearing aids 
     Case Open 

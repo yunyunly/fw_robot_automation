@@ -5,7 +5,7 @@ Documentation     Test cases for testing serial library
 Test Setup        Open Serial Port    /dev/ttyACM0    115200
 Test Teardown     Close Serial Port
 Default Tags      Serial
-Library           SerialLib.py
+Library           ../lib/SerialLib.py
 
 *** Test Cases ***
 Open and close serial port

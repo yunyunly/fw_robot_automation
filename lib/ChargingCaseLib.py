@@ -3,7 +3,9 @@ import json
 import os
 import sys 
 sys.path.append("../config")
-from cmd_defs import ROBOTC 
+from cmd_defs import ROBOTC
+import robot.api.logger as Logger 
+
 """ 
 def struct{
     u16 cmd_id
@@ -20,20 +22,27 @@ raw_map_file = open(os.path.join(root_path,"config", "blue_pigeon_defs.json"))
 cmd_map = json.load(raw_map_file)
 print(cmd_map)
 print(int(cmd_map["robotc"]["Request Battery Left"], 16))
-class ChargingCaseLib(object):
+
+__version__ = "0.2"
+class ChargingCaseLib:
     """Library for control charging case
 
        Most operations are implemented as sending bluetooth low energy message to charging case    
     """
+    ROBOT_LIBRARY_SCOPE = "SUITE"
 
     def __init__(self):
+        self.blue = BluetoothLib()
+        print("ChargingCase Inited")
         return 
      
-    def connect_case(self, addr="D0:14:11:20:20:18"):
-        self.blue = BluetoothLib()
+    def connect_charging_case(self, addr="D0:14:11:20:20:18"):
+        Logger.info("Call Blue Connect Case")
         self.blue.ble_connect_case(addr)
+        return 
 
-    def disconnect_case(self):
+    def disconnect_charging_case(self):
+        print("Call Blue Disconnect Case")
         self.blue.ble_connect_case() 
  
     def print_info(self):
@@ -215,26 +224,24 @@ class ChargingCaseLib(object):
         self.blue.ble_send_case(cmd+desc)       
         return 
     def case_connect_hearing_aids(self):
-    #     """Let charging case call connecting handler
-    #
-    #     Examples:
-    #     |Connect Hearing Aids|
-    #     """ 
-    #     self.blue.ble_connect_hearing_aids()
-    #     return 
-    #
+        """Let charging case call connecting handler
+
+        Examples:
+        |Case Connect Hearing Aids|
+        """ 
+        return 
+    
     def case_disconnect_hearing_aids(self):
-    #     """Let charging case call disconnecing handler
-    #
-    #     Examples:
-    #     |Disconnect Hearing Aids|
-    #     """    
-    #     self.blue.ble_disconnect_hearing_aids()
-    #     return 
+        """Let charging case call disconnecing handler
+
+        Examples:
+        |Case Disconnect Hearing Aids|
+        """    
+        return 
 
 
 
 if __name__ == "__main__":
     cc = ChargingCaseLib()
-    cc.connect_case()
+    cc.connect_charging_case()
     cc.print_info()
