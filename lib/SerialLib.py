@@ -12,6 +12,7 @@ class Logger(object):
         self._has_new_line = threading.Semaphore(0)
         self._readed = 0
         self._logs = []
+        self._idx = 0
         return 
     
     @staticmethod
@@ -27,9 +28,9 @@ class Logger(object):
             try:
                 Logger.pr("reading...")
                 newline = self._serial.readline().decode("utf-8").strip()
-                newline = newline.strip()
                 if newline == "":
                     continue
+                Logger.pr(f"readline {newline}")
                 self.pr("check waiting...")
                 if self._wait_new_line == True:
                     self.pr("notify wait flag...")
@@ -38,7 +39,8 @@ class Logger(object):
             except:
                 newline = "serial closed"
             timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')
-            log_entry = f"[{timestamp}] {newline}"
+            log_entry = f"{self._idx}[{timestamp}] {newline}"
+            self._idx +=1
             self._logs.append(log_entry)
         self._io_opened = False 
 
@@ -64,12 +66,10 @@ class Logger(object):
         return newline
     
     def read_latest_blocking(self)->str:
-        while self.read_latest() == None:
-            time.sleep(0.05)
-        self._wait_new_line = True 
-        self._has_new_line.acquire()
-
-        newline = self.read_latest()
+        if len(self._logs) == self._readed:
+            self._wait_new_line = True 
+            self._has_new_line.acquire()
+        newline = self.read_latest() 
         if newline == None:
             raise TypeError("Should not be None type")
         return newline
@@ -124,7 +124,7 @@ class SerialLib(object):
         """
         self._logger.open(port, bard_rate)
 
-    def save(self, filepath=None):
+    def serial_save(self, filepath=None):
         self._logger.save(filepath)
 
     def close_serial_port(self):

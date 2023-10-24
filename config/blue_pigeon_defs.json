@@ -5,22 +5,18 @@
     "Plug Out" : "0x02",
     "Case Open": "0x03",
     "Case Close": "0x04",
-    "Dock Left": "0x05",
-    "Dock Right": "0x06",
-    "Dock Both" : "0x07",
-    "Undock Left": "0x08",
-    "Undock Right": "0x09",
-    "Undock Both": "0x0A",
-    "Press Fn": "0x0b",
-    "Press Left": "0x0c",
-    "Press Right": "0x0d",
-    "Press Reset": "0x0e",
-    "Press Fn Long": "0x0f",
-    "Press Reset Long": "0x10",
-    "Request Battery Left": "0x11",
-    "Request Battery Right": "0x12",
-    "Connect Hearing Aids": "0x13",
-    "Disconnect Hearing Aids": "0x14"
+    "Dock": "0x05",
+    "Undock": "0x06",
+    "Press Button": "0x07",
+    "Request Battery": "0x8",
+    "Connect Hearing Aids": "0x9",
+    "Disconnect Hearing Aids": "0x10",
+    "Charge Hearing Aids": "0x0a",
+    "Charge Hearing Aids Stop": "0x0b",
+    "Gen Pulse": "0x0c",
+    "Single Wire Snd": "0x0d",
+    "Single Wire Req": "0x0e",
+    "Not Implemented Yet": "0xff"
   },
   "robote": {
     "Print Info": "0x00",
@@ -44,5 +40,18 @@
     "Request Battery Right": "0x12",
     "Connect Hearing Aids": "0x13",
     "Disconnect Hearing Aids": "0x14"
+  },
+  "side": {
+    "Left":"0x01",
+    "Right":"0x02",
+    "Both": "0x03"
+  },
+  "button": {
+    "Fn": "0x01",
+    "Fn Long": "0x02",
+    "Rst": "0x03",
+    "Rst Long": "0x04",
+    "Left": "0x05",
+    "Right": "0x06"
   }
 }
