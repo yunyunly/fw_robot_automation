@@ -28,7 +28,7 @@ class BluetoothLib(object):
         Console(f"Connect To {dev_path}")
         Console("Discovering Device")
         cached = len([x for x in self.om_if.GetManagedObjects() if dev_addr in x]) != 0
-        if not cached:
+        while not cached:
             self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
             while not cached:
                 print("Press Reset Let Device Discovable!!!")
@@ -60,6 +60,7 @@ class BluetoothLib(object):
         return (dev_obj, dev_path)
 
     def send(self, iface, data):
+        Console(f"WriteValue: {bytearray(data)}")
         iface.WriteValue(bytearray(data), {})
     
     def read(self, iface):

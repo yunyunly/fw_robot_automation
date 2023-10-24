@@ -11,7 +11,7 @@ def struct{
     u16 cmd_id
     u16 cmd_params
     u8  params[16]
-}
+} ble msg
 """
 
 root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), os.path.pardir, os.path.pardir))
@@ -178,13 +178,13 @@ class ChargingCaseLib:
         self.blue.ble_send_case(cmd+desc)
         return 
 
-    def get_hearing_aids_soc(self, side: str):
+    def request_hearing_aids_soc(self, side: str):
         """Let charging case request hearing aids' soc 
 
         Examples:
-        |Get Hearing Aids Soc| Left |
-        |Get Hearing Aids Soc| Right |
-        |Get Hearing Aids Soc| Both |
+        |Request Hearing Aids Soc| Left |
+        |Request Hearing Aids Soc| Right |
+        |Request Hearing Aids Soc| Both |
         """        
         value = 0
         if side == "Left":
@@ -200,7 +200,7 @@ class ChargingCaseLib:
         self.blue.ble_send_case(cmd+desc)
         return 
     
-    def generate_pulse(self):
+    def generate_pulse(self, side: str):
         """Let charging case generate a pulse sequence
 
         Exampls:
@@ -211,18 +211,35 @@ class ChargingCaseLib:
         desc = [0, 0]
         self.blue.ble_send_case(cmd+desc)       
         return 
+    
+    def charge_hearing_aids(self, side: str):
+        """Let charging case call charging hearing aids handler 
+        
+        Examples:
+        |Charge Hearing Aids| Left |
+        |Charge Hearing Aids| Right|
+        |Charge Hearing Aids| Both |
+        """
+        value = ROBOTC.NOT_IMPLEMENTED_YET.value
+        cmd = [(value >> 8) & 0xff, value & 0xff]
+        desc = [0, 0]
+        self.blue.ble_send_case(cmd+desc)       
+        return 
 
-    def discharge(self, side:str):
-        """Let charging case call discharge handler
+    def charge_hearing_aids_stop(self, side: str):
+        """Let charging case call stop charge hearing aids handler
 
         Examples:
-        |Discharge|
+        |Charge Hearing Aids Stop| Left |
+        |Charge Hearing Aids Stop| Right |
+        |Charge Hearing Aids Stop| Both |
         """        
         value = ROBOTC.NOT_IMPLEMENTED_YET.value
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
         self.blue.ble_send_case(cmd+desc)       
         return 
+
     def case_connect_hearing_aids(self):
         """Let charging case call connecting handler
 
@@ -237,6 +254,15 @@ class ChargingCaseLib:
         Examples:
         |Case Disconnect Hearing Aids|
         """    
+        return 
+
+    def single_wire_send(self, side: str, data: str):
+        data_bytes = bytes.fromhex(data)
+        
+        return 
+
+    def single_wire_request(self, ):
+
         return 
 
 
