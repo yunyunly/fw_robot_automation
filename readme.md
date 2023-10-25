@@ -1,3 +1,35 @@
+# How to 
+## Add a BLE Command 
+1. open `config/robot_defs.json`, add a new item into json object.
+2. run `bash gen_defs.sh`, generate `robot_defs.py` and `robot_defs.h`
+3. sync fw with `robot_defs.h`
+
+## Add a Test Suite 
+1. create a new `xyz.robot` file 
+2. in `setting` section, set suite setup, suite teardown, case setup, case teardown, document, import library 
+3. add test cases you want 
+
+## Add a Test Case 
+1. give a test name without indent 
+2. write actions line by line with a Tab indent
+3. use a Tab to split keywords and parameters not a space.
+4. (optinal) maybe you can use R.IDE to do that  
+
+## Run a Test Suite 
+`robot xyz.robot`
+
+## Run a Test Case 
+`robot --test "name of the test case" xyz.robot`
+
+## Add a Library 
+you can do it 
+
+## Add a API 
+you can do it 
+
+## Add a Keyword 
+you can do it 
+
 # Setup
 ## Step1 install pythin virtual environment
 You must install a python virtual environment to avoid broken of you python while setting up robot framework.

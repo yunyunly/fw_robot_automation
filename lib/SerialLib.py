@@ -101,16 +101,11 @@ class Logger(object):
 
 class SerialLib(object):
     """Test library for control serial port
-
+    
+    default:
+    port: /dev/ttyACM0
+    bard rate: 115200 
     """
-    """
-    _port = "/dev/ttyUSB0"
-    _bard_rate = 115200
-    _lock 
-    _opened = False
-    _logs = []
-    """
-
     def __init__(self):
         self._logger = Logger()
         return 
@@ -125,6 +120,9 @@ class SerialLib(object):
         self._logger.open(port, bard_rate)
 
     def serial_save(self, filepath=None):
+        """Save current log into files.
+        The log file named log-{time}.txt and are stored in current working dir.
+        """
         self._logger.save(filepath)
 
     def close_serial_port(self):
@@ -149,7 +147,7 @@ class SerialLib(object):
         return self._logger.read_latest()
     
     def serial_read_newest(self):
-        """Read the newest line of serial port 
+        """(deprecated)Read the newest line of serial port 
         One line of serial data can be returned only once by this call 
 
         Return:
@@ -190,7 +188,8 @@ class SerialLib(object):
         - timeout: Maximum time (in seconds) to wait for the string.
 
         Examples:
-        | Listen For String | Hello, World! | timeout=10 |
+        | Serial Read Until | hello, world | 
+        | Serial Read Until | Hello, World! | timeout=10 |
         """
         start_time = time.time()
         while True:
@@ -217,8 +216,8 @@ class SerialLib(object):
         - If no match is found within the timeout, None is returned.
 
         Examples:
-        | ${datas} = | Listen For String Regex | Received: (\d+) | timeout=5 |
-        | ${datas} = | Listen For String Regex | Data: (\w+) (\d+) | timeout=10 |
+        | ${datas} = | Serial Read Until Regex | Received: (\d+) | 
+        | ${datas} = | Serial Read Until Regex | Data: (\w+) (\d+) | timeout=10 |
         """
         start_time = time.time()
         while True:
