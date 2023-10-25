@@ -4,6 +4,8 @@ import os
 import sys 
 sys.path.append("../config")
 from cmd_defs import ROBOTC
+from cmd_defs import SIDE 
+from cmd_defs import BUTTON
 import robot.api.logger as Logger 
 
 """ 
@@ -21,7 +23,6 @@ raw_map_file = open(os.path.join(root_path,"config", "blue_pigeon_defs.json"))
 
 cmd_map = json.load(raw_map_file)
 print(cmd_map)
-print(int(cmd_map["robotc"]["Request Battery Left"], 16))
 
 __version__ = "0.2"
 class ChargingCaseLib:
@@ -35,13 +36,36 @@ class ChargingCaseLib:
         self.blue = BluetoothLib()
         print("ChargingCase Inited")
         return 
-     
+    
+    def reset(self):
+        """Let charging case Reset to refresh state.
+        
+        Examples:
+        |Reset|
+        """
+        cmd = [(ROBOTC.RESET.value >> 8) & 0xff, ROBOTC.RESET.value & 0xff]
+        desc = [0,0]
+        param = []
+        self.blue.ble_send_case(cmd+desc+param)
+        return 
+
+
     def connect_charging_case(self, addr="D0:14:11:20:20:18"):
+        """Connect To charging case before you send any message to it.  
+        
+        Examples:
+        |Connect Charging Case| D0:14:11:20:20:18|
+        """
         Logger.info("Call Blue Connect Case")
         self.blue.ble_connect_case(addr)
         return 
 
     def disconnect_charging_case(self):
+        """Disconnect charging case.  
+        
+        Examples:
+        |Disconnect Charging Case|
+        """
         print("Call Blue Disconnect Case")
         self.blue.ble_connect_case() 
  
@@ -81,7 +105,7 @@ class ChargingCaseLib:
 
     def case_open(self):
         """Let charging case call case open handler  
-
+ 
         Examples:
         |Case Open|
         """        
@@ -111,18 +135,19 @@ class ChargingCaseLib:
         |Dock|Right|
         |Dock|Both|
         """
-        value = 0
+        value = ROBOTC.DOCK.value 
+        param = []
         if side == "Left":
-            value = ROBOTC.DOCK_LEFT.value 
+            param = [SIDE.LEFT.value]
         elif side == "Right":
-            value = ROBOTC.DOCK_RIGHT.value 
+            param = [SIDE.RIGHT.value]
         elif side == "Both":
-            value = ROBOTC.DOCK_BOTH.value
+            param = [SIDE.BOTH.value]
         else:
             raise Exception("Invalid Dock Side")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)
+        self.blue.ble_send_case(cmd+desc+param)
         return 
 
     def undock(self, side: str):
@@ -133,18 +158,19 @@ class ChargingCaseLib:
         |Undock|Right|
         |Undock|Both|
         """        
-        value = 0
+        value = ROBOTC.UNDOCK.value
+        param = []
         if side == "Left":
-            value = ROBOTC.UNDOCK_LEFT.value 
+            param = [SIDE.LEFT.value]
         elif side == "Right":
-            value = ROBOTC.UNDOCK_RIGHT.value 
+            param = [SIDE.RIGHT.value]
         elif side == "Both":
-            value = ROBOTC.UNDOCK_BOTH.value
+            param = [SIDE.BOTH.value]
         else:
-            raise Exception("Invalid Dock Side")
+            raise Exception("Invalid Undock Side")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)
+        self.blue.ble_send_case(cmd+desc+param)
         return 
     
     def press_button(self, button: str, long: str = ""):
@@ -158,24 +184,25 @@ class ChargingCaseLib:
         |Press Button| Reset |
         |Press Button| Reset | Long |
         """
-        value = 0
+        value = ROBOTC.PRESS_BUTTON.value 
+        param = []
         if button == "Fn":
-            value = ROBOTC.PRESS_FN.value 
+            param = [BUTTON.FN.value]
             if long == "Long":
-                value = ROBOTC.PRESS_FN_LONG.value 
+                param = [BUTTON.FN_LONG.value]
         elif button == "Reset":
-            value = ROBOTC.PRESS_RESET.value
+            param = [BUTTON.RST.value]
             if long == "Long":
-                value = ROBOTC.PRESS_RESET_LONG.value 
+                param = [BUTTON.RST_LONG.value]
         elif button == "Left":
-            value = ROBOTC.PRESS_LEFT.value
+            param = [BUTTON.LEFT.value]
         elif button == "Right":
-            value = ROBOTC.PRESS_RIGHT.value 
+            param = [BUTTON.RIGHT.value]
         else:
             raise Exception("Invalid Press Button")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)
+        self.blue.ble_send_case(cmd+desc+param)
         return 
 
     def request_hearing_aids_soc(self, side: str):
@@ -186,30 +213,42 @@ class ChargingCaseLib:
         |Request Hearing Aids Soc| Right |
         |Request Hearing Aids Soc| Both |
         """        
-        value = 0
+        value = ROBOTC.REQUEST_BATTERY.value 
+        param = []
         if side == "Left":
-            value = ROBOTC.REQUEST_BATTERY_LEFT.value 
+            param = [SIDE.LEFT.value]
         elif side == "Right":
-            value = ROBOTC.REQUEST_BATTERY_RIGHT.value 
+            param = [SIDE.RIGHT.value]
         elif side == "Both":
-            value = ROBOTC.REQUEST_BATTERY_BOTH.value 
+            param = [SIDE.BOTH.value]
         else:
-            raise Exception("Invalid Battery Side")
+            raise Exception("Invalid Soc Side")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)
+        self.blue.ble_send_case(cmd+desc+param)
         return 
     
     def generate_pulse(self, side: str):
         """Let charging case generate a pulse sequence
 
         Exampls:
-        |Generate Pulse|
+        |Generate Pulse| Left |
+        |Generate Pulse| Right |
+        |Generate Pulse| Both |
         """
-        value = ROBOTC.NOT_IMPLEMENTED_YET.value
+        value = ROBOTC.GEN_PULSE.value
+        param = []
+        if side == "Left":
+            param = [SIDE.LEFT.value]
+        elif side == "Right":
+            param = [SIDE.RIGHT.value]
+        elif side == "Both":
+            param = [SIDE.BOTH.value]
+        else:
+            raise Exception("Invalid Pulse Side")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)       
+        self.blue.ble_send_case(cmd+desc+param)       
         return 
     
     def charge_hearing_aids(self, side: str):
@@ -220,10 +259,19 @@ class ChargingCaseLib:
         |Charge Hearing Aids| Right|
         |Charge Hearing Aids| Both |
         """
-        value = ROBOTC.NOT_IMPLEMENTED_YET.value
+        value = ROBOTC.CHARGE_HEARING_AIDS.value
+        param = []
+        if side == "Left":
+            param = [SIDE.LEFT.value] 
+        elif side == "Right":
+            param = [SIDE.RIGHT.value] 
+        elif side == "Both":
+            param = [SIDE.BOTH.value]
+        else:
+            raise Exception("Invalid Chg Side")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)       
+        self.blue.ble_send_case(cmd+desc+param)       
         return 
 
     def charge_hearing_aids_stop(self, side: str):
@@ -234,10 +282,19 @@ class ChargingCaseLib:
         |Charge Hearing Aids Stop| Right |
         |Charge Hearing Aids Stop| Both |
         """        
-        value = ROBOTC.NOT_IMPLEMENTED_YET.value
+        value = ROBOTC.CHARGE_HEARING_AIDS_STOP.value
+        param = []
+        if side == "Left":
+            param = [SIDE.LEFT.value] 
+        elif side == "Right":
+            param = [SIDE.RIGHT.value] 
+        elif side == "Both":
+            param = [SIDE.BOTH.value]
+        else:
+            raise Exception("Invalid Chg Stop Side")
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0, 0]
-        self.blue.ble_send_case(cmd+desc)       
+        self.blue.ble_send_case(cmd+desc+param)       
         return 
 
     def case_connect_hearing_aids(self):
@@ -246,6 +303,11 @@ class ChargingCaseLib:
         Examples:
         |Case Connect Hearing Aids|
         """ 
+        value = ROBOTC.CONNECT_HEARING_AIDS.value 
+        cmd = [(value >> 8) & 0xff, value & 0xff]
+        desc = [0, 0]
+        param = []
+        self.blue.ble_send_case(cmd+desc+param)       
         return 
     
     def case_disconnect_hearing_aids(self):
@@ -253,15 +315,68 @@ class ChargingCaseLib:
 
         Examples:
         |Case Disconnect Hearing Aids|
-        """    
+        """ 
+        value = ROBOTC.DISCONNECT_HEARING_AIDS.value 
+        cmd = [(value >> 8) & 0xff, value & 0xff]
+        desc = [0, 0]
+        param = []
+        self.blue.ble_send_case(cmd+desc+param)       
         return 
 
     def single_wire_send(self, side: str, data: str):
-        data_bytes = bytes.fromhex(data)
+        """Let charging case send given message to hearing aids via single wire
         
+        Examples:
+        |Single Wire Send| Left | 01ff00 |
+        |Single Wire Send| Right | 01ffff |
+        |Single Wire Send| Both | 01ff06010203040506 |
+        """
+        value = ROBOTC.SINGLE_WIRE_SND.value 
+        param = []
+        if side == "Left":
+            param = [SIDE.LEFT.value] 
+        elif side == "Right":
+            param = [SIDE.RIGHT.value] 
+        elif side == "Both":
+            param = [SIDE.BOTH.value]
+        else:
+            raise Exception("Invalid Snd Side")
+        for i in range(0, len(data)):
+            if (i & 0x1) == 1:
+                continue
+            v = int(data[i:i+2],16)
+            param.append(v)
+        cmd = [(value >> 8) & 0xff, value & 0xff]
+        desc = [0,0]
+        self.blue.ble_send_case(cmd+desc+param)       
         return 
 
-    def single_wire_request(self, ):
+    def single_wire_request(self, side:str, data:str):
+        """Let charging case send given message to hearing aids and wait for response via single wire
+        
+        Examples:
+        |Single Wire Request| Left | 01ff00 |
+        |Single Wire Request| Right | 01ffff |
+        |Single Wire Request| Both | 01ff06010203040506 |
+        """
+        value = ROBOTC.SINGLE_WIRE_REQ.value 
+        param = []
+        if side == "Left":
+            param = [SIDE.LEFT.value] 
+        elif side == "Right":
+            param = [SIDE.RIGHT.value] 
+        elif side == "Both":
+            param = [SIDE.BOTH.value]
+        else:
+            raise Exception("Invalid Req Side")
+        for i in range(0, len(data)):
+            if (i & 0x1) == 1:
+                continue
+            v = int(data[i:i+2],16)
+            param.append(v)
+        cmd = [(value >> 8) & 0xff, value & 0xff]
+        desc = [0,0]
+        self.blue.ble_send_case(cmd+desc+param)       
 
         return 
 
@@ -269,5 +384,7 @@ class ChargingCaseLib:
 
 if __name__ == "__main__":
     cc = ChargingCaseLib()
-    cc.connect_charging_case()
-    cc.print_info()
+    #cc.single_wire_send()
+    #cc.case_close()
+    #cc.print_info()
+

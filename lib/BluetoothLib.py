@@ -112,8 +112,8 @@ if __name__ == "__main__":
     ble = BluetoothLib()
     ble.ble_connect_case("D0:14:11:20:20:18")
     header = [9]
-    cmd = [0,0]
+    cmd = [0,11]
     desc = [0,0]
-    param = [] 
+    param = [1] 
     ble.ble_send_case(header+cmd+desc+param)
 

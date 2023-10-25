@@ -16,6 +16,7 @@
     "Gen Pulse": "0x0c",
     "Single Wire Snd": "0x0d",
     "Single Wire Req": "0x0e",
+    "Reset": "0xfe",
     "Not Implemented Yet": "0xff"
   },
   "robote": {

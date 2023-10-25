@@ -27,120 +27,120 @@ Print information
 Case open 
     Case Open 
     ${status}=  Serial Read Until Regex   Robot: case ([a-zA-Z]+)
-    Should Be Equal   ${status}   open    
+    Should Be Equal   ${status}[0]   open    
     Serial Save
 
 Case close 
     Case Close 
     ${status}=  Serial Read Until Regex   Robot: case ([a-zA-Z]+)
-    Should Be Equal   ${status}   close 
+    Should Be Equal   ${status}[0]   close 
 
-Charger plug in 
+Plug in 
     Plug In 
     ${status}=  Serial Read Until Regex   Robot: vin plug ([a-zA-Z]+)
-    Should Be Equal   ${status}   in   
+    Should Be Equal   ${status}[0]   in   
 
-Charger plug out
+Plug out
     Plug Out 
     ${status}=  Serial Read Until Regex   Robot: vin plug ([a-zA-Z]+)
-    Should Be Equal   ${status}   out 
+    Should Be Equal   ${status}[0]   out 
 
 
 Case connect hearing aids 
     Case Connect Hearing Aids 
     ${status}=  Serial Read Until Regex    Robot: ([a-zA-Z]+) ha 
-    Should Be Equal   ${status}   connect 
+    Should Be Equal   ${status}[0]   connect 
 
 Case disconnect hearing aids 
     Case Disconnect Hearing Aids 
     ${status}=  Serial Read Until Regex     Robot: ([a-zA-Z]+) ha 
-    Should Be Equal   ${status}   disconnect 
+    Should Be Equal   ${status}[0]   disconnect 
 
 Case start charge hearing aids 
-    Charging Hearing Aids  Left 
-    ${status}=  Serial Read Until Regex     Robot: do charge ([a-zA-Z]+)  
-    Should Be Equal   ${status}   left
-    Charging Hearing Aids  Right 
-    ${status}=  Serial Read Until Regex     Robot: do charge ([a-zA-Z]+)  
-    Should Be Equal   ${status}   right 
-    Charging Hearing Aids  Both 
-    ${status}=  Serial Read Until Regex     Robot: do charge ([a-zA-Z]+)  
-    Should Be Equal   ${status}   both 
+    Charge Hearing Aids  Left 
+    ${status}=  Serial Read Until Regex     Robot: do chg ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   left
+    Charge Hearing Aids  Right 
+    ${status}=  Serial Read Until Regex     Robot: do chg ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   right 
+    Charge Hearing Aids  Both 
+    ${status}=  Serial Read Until Regex     Robot: do chg ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   both 
 
 Case stop charge hearing aids 
-    Charging Hearing Aids Stop  Left 
-    ${status}=  Serial Read Until Regex     Robot: stop charge ([a-zA-Z]+)  
-    Should Be Equal   ${status}   left
-    Charging Hearing Aids Stop   Right 
-    ${status}=  Serial Read Until Regex     Robot: stop charge ([a-zA-Z]+)  
-    Should Be Equal   ${status}   right 
-    Charging Hearing Aids Stop  Both 
-    ${status}=  Serial Read Until Regex     Robot: stop charge ([a-zA-Z]+)  
-    Should Be Equal   ${status}   both 
+    Charge Hearing Aids Stop  Left 
+    ${status}=  Serial Read Until Regex     Robot: stop chg ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   left
+    Charge Hearing Aids Stop   Right 
+    ${status}=  Serial Read Until Regex     Robot: stop chg ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   right 
+    Charge Hearing Aids Stop  Both 
+    ${status}=  Serial Read Until Regex     Robot: stop chg ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   both 
 
 Case dock 
     Dock  Left 
     ${status}=  Serial Read Until Regex     Robot: dock ([a-zA-Z]+)  
-    Should Be Equal   ${status}   left
+    Should Be Equal   ${status}[0]   left
     Dock   Right 
     ${status}=  Serial Read Until Regex     Robot: dock ([a-zA-Z]+)  
-    Should Be Equal   ${status}   right 
+    Should Be Equal   ${status}[0]   right 
     Dock  Both 
     ${status}=  Serial Read Until Regex     Robot: dock ([a-zA-Z]+)  
-    Should Be Equal   ${status}   both 
+    Should Be Equal   ${status}[0]   both 
 
 Case undock 
     Undock  Left 
     ${status}=  Serial Read Until Regex     Robot: undock ([a-zA-Z]+)  
-    Should Be Equal   ${status}   left
+    Should Be Equal   ${status}[0]   left
     Undock   Right 
     ${status}=  Serial Read Until Regex     Robot: undock ([a-zA-Z]+)  
-    Should Be Equal   ${status}   right 
+    Should Be Equal   ${status}[0]   right 
     Undock  Both 
     ${status}=  Serial Read Until Regex     Robot: undock ([a-zA-Z]+)  
-    Should Be Equal   ${status}   both 
+    Should Be Equal   ${status}[0]   both 
 
 Press button 
-    Press Button Fn  
-    ${status}=  Serial Read Until Regex     Robot: Press ([a-zA-Z]+)  
-    Should Be Equal   ${status}   fn
+    Press Button  Fn  
+    ${status}=  Serial Read Until Regex     Robot: press ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   fn
     Press Button  Fn  Long 
-    ${status}=  Serial Read Until Regex     Robot: Press ([a-zA-Z]+)  
-    Should Be Equal   ${status}   fnlong 
+    ${status}=  Serial Read Until Regex     Robot: press ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   fnlong 
     Press Button  Reset
-    ${status}=  Serial Read Until Regex     Robot: Press ([a-zA-Z]+)  
-    Should Be Equal   ${status}   rst 
+    ${status}=  Serial Read Until Regex     Robot: press ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   rst 
     Press Button  Reset   Long 
-    ${status}=  Serial Read Until Regex     Robot: Press ([a-zA-Z]+)  
-    Should Be Equal   ${status}   rstlong
+    ${status}=  Serial Read Until Regex     Robot: press ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   rstlong
     Press Button  Left
-    ${status}=  Serial Read Until Regex     Robot: Press ([a-zA-Z]+)  
-    Should Be Equal   ${status}   left 
+    ${status}=  Serial Read Until Regex     Robot: press ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   left 
     Press Button  Right
-    ${status}=  Serial Read Until Regex     Robot: Press ([a-zA-Z]+)  
-    Should Be Equal   ${status}   right 
+    ${status}=  Serial Read Until Regex     Robot: press ([a-zA-Z]+)  
+    Should Be Equal   ${status}[0]   right 
 
 Pulse 
   Generate Pulse  Left
-  ${status}=  Serial Read Until Regex     Robot: pluse ([a-zA-Z]+)  
-  Should Be Equal   ${status}   left 
+  ${status}=  Serial Read Until Regex     Robot: pulse ([a-zA-Z]+)  
+  Should Be Equal   ${status}[0]   left 
   Generate Pulse  Right
-  ${status}=  Serial Read Until Regex     Robot: pluse ([a-zA-Z]+)  
-  Should Be Equal   ${status}   right 
+  ${status}=  Serial Read Until Regex     Robot: pulse ([a-zA-Z]+)  
+  Should Be Equal   ${status}[0]   right 
   Generate Pulse  Both
-  ${status}=  Serial Read Until Regex     Robot: pluse ([a-zA-Z]+)  
-  Should Be Equal   ${status}   both
+  ${status}=  Serial Read Until Regex     Robot: pulse ([a-zA-Z]+)  
+  Should Be Equal   ${status}[0]   both
 
 Soc
   Request Hearing Aids Soc  Left
   ${status}=  Serial Read Until Regex     Robot: soc ([a-zA-Z]+)  
-  Should Be Equal   ${status}   left 
+  Should Be Equal   ${status}[0]   left 
   Request Hearing Aids Soc  Right
   ${status}=  Serial Read Until Regex     Robot: soc ([a-zA-Z]+)  
-  Should Be Equal   ${status}   right 
+  Should Be Equal   ${status}[0]   right 
   Request Hearing AIds Soc  Both
   ${status}=  Serial Read Until Regex     Robot: soc ([a-zA-Z]+)  
-  Should Be Equal   ${status}   both
+  Should Be Equal   ${status}[0]   both
 
 Single wire
   Single Wire Send  Left  01ff00
