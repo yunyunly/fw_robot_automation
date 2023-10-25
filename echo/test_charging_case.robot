@@ -22,13 +22,11 @@ Print information
       Should Be True  ${curr} < 0
     END 
     Should Be True     ${soc} >= 0 and ${soc} <= 100
-    Serial Save
 
 Case open 
     Case Open 
     ${status}=  Serial Read Until Regex   Robot: case ([a-zA-Z]+)
     Should Be Equal   ${status}[0]   open    
-    Serial Save
 
 Case close 
     Case Close 
@@ -44,7 +42,6 @@ Plug out
     Plug Out 
     ${status}=  Serial Read Until Regex   Robot: vin plug ([a-zA-Z]+)
     Should Be Equal   ${status}[0]   out 
-
 
 Case connect hearing aids 
     Case Connect Hearing Aids 
@@ -168,4 +165,8 @@ Single wire
   Should Be Equal   ${status}[0]  both  
   Should Be Equal   ${status}[1]  01ff00  
 
-
+Reset 
+  Reset 
+  Serial Read Until    WIRELESS_FW_RUNNING
+  Serial Read Until    DBGMCU_GetRevisionID= 2001
+  Serial Read Until    DBGMCU_GetDeviceID= 495
