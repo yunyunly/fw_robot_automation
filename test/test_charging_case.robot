@@ -99,22 +99,22 @@ Case undock
 
 Press button
     Press Button    Fn
-    ${status}= Serial Read Until Regex    Robot: press ([a-zA-Z]+)
+    ${status}=    Serial Read Until Regex    Robot: press ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    fn
     Press Button    Fn    Long
-    ${status}= Serial Read Until Regex    Robot: press ([a-zA-Z]+)
+    ${status}=    Serial Read Until Regex    Robot: press ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    fnlong
     Press Button    Reset
-    ${status}= Serial Read Until Regex    Robot: press ([a-zA-Z]+)
+    ${status}=    Serial Read Until Regex    Robot: press ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    rst
     Press Button    Reset    Long
-    ${status}= Serial Read Until Regex    Robot: press ([a-zA-Z]+)
+    ${status}=    Serial Read Until Regex    Robot: press ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    rstlong
     Press Button    Left
-    ${status}= Serial Read Until Regex    Robot: press ([a-zA-Z]+)
+    ${status}=    Serial Read Until Regex    Robot: press ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    left
     Press Button    Right
-    ${status}= Serial Read Until Regex    Robot: press ([a-zA-Z]+)
+    ${status}=    Serial Read Until Regex    Robot: press ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    right
 
 Pulse

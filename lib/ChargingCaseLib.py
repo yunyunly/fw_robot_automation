@@ -2,10 +2,9 @@ from BluetoothLib import BluetoothLib
 import json 
 import os
 import sys 
-sys.path.append("../config")
-from cmd_defs import ROBOTC
-from cmd_defs import SIDE 
-from cmd_defs import BUTTON
+from config.robot_defs import ROBOTC 
+from config.robot_defs import SIDE 
+from config.robot_defs import BUTTON
 import robot.api.logger as Logger 
 
 """ 
@@ -15,14 +14,6 @@ def struct{
     u8  params[16]
 } ble msg
 """
-
-root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), os.path.pardir, os.path.pardir))
-print(root_path)
-raw_map_file = open(os.path.join(root_path,"config", "blue_pigeon_defs.json"))
-#raw_map = json.load(raw_map_file)
-
-cmd_map = json.load(raw_map_file)
-print(cmd_map)
 
 __version__ = "0.2"
 class ChargingCaseLib:
@@ -255,6 +246,7 @@ class ChargingCaseLib:
         """Let charging case call charging hearing aids handler 
         
         Examples:
+
         |Charge Hearing Aids| Left |
         |Charge Hearing Aids| Right|
         |Charge Hearing Aids| Both |
@@ -278,6 +270,7 @@ class ChargingCaseLib:
         """Let charging case call stop charge hearing aids handler
 
         Examples:
+
         |Charge Hearing Aids Stop| Left |
         |Charge Hearing Aids Stop| Right |
         |Charge Hearing Aids Stop| Both |
@@ -382,8 +375,8 @@ class ChargingCaseLib:
 
 
 
-if __name__ == "__main__":
-    cc = ChargingCaseLib()
+# if __name__ == "__main__":
+#     cc = ChargingCaseLib()
     #cc.single_wire_send()
     #cc.case_close()
     #cc.print_info()

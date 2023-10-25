@@ -1,6 +1,6 @@
-// Update Time 23-10-25 03:27:48
-#ifndef __BLUEPIGEON_DEFS_H__
-#define __BLUEPIGEON_DEFS_H__
+// Update Time 23-10-25 06:40:20
+#ifndef __ROBOT_DEFS_H__
+#define __ROBOT_DEFS_H__
 typedef enum {
 ROBOTC_PRINT_INFO=0x00,
 ROBOTC_PLUG_IN=0x01,
@@ -57,4 +57,4 @@ BUTTON_RST_LONG=0x04,
 BUTTON_LEFT=0x05,
 BUTTON_RIGHT=0x06,
 } BUTTON_t;
-#endif // __BLUEPIGEON_DEFS_H__
+#endif // __ROBOT_DEFS_H__

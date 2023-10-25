@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Define the input JSON configuration file
-JSON_CONFIG="blue_pigeon_defs.json"
+JSON_CONFIG="robot_defs.json"
 
-C_HEADER="blue_pigeon_defs.h"
+C_HEADER="robot_defs.h"
 
-PY_HEADER="cmd_defs.py"
+PY_HEADER="robot_defs.py"
 
 rm $C_HEADER 
 rm $PY_HEADER 
@@ -16,8 +16,8 @@ echo "Totally " $length "Types"
 
 # C Header 
 echo "// Update Time ${now}" >> $C_HEADER
-echo "#ifndef __BLUEPIGEON_DEFS_H__" >> $C_HEADER 
-echo "#define __BLUEPIGEON_DEFS_H__" >> $C_HEADER 
+echo "#ifndef __ROBOT_DEFS_H__" >> $C_HEADER 
+echo "#define __ROBOT_DEFS_H__" >> $C_HEADER 
 for ((i = 0; i < $length; i++)); do
   echo "typedef enum {" >> $C_HEADER 
   type_prefix=$(jq -r "to_entries[${i}] | .key | ascii_upcase" $JSON_CONFIG)
@@ -25,7 +25,7 @@ for ((i = 0; i < $length; i++)); do
   jq -r "to_entries[${i}] | .value | to_entries[] | \"${type_prefix}_\" + (.key | gsub(\" \"; \"_\") | ascii_upcase) + \"=\" + (.value) + \",\"" ${JSON_CONFIG} >> $C_HEADER 
   echo "} ${type_prefix}_t;" >> $C_HEADER 
 done
-echo "#endif // __BLUEPIGEON_DEFS_H__" >> $C_HEADER
+echo "#endif // __ROBOT_DEFS_H__" >> $C_HEADER
 
 # Python Header 
 echo "# Update Time ${now}" >> $PY_HEADER
