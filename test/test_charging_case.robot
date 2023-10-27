@@ -139,31 +139,43 @@ Soc
     ${status}=    Serial Read Until Regex    Robot: soc ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    both
 
-Single wire
+Single wire send
     Single Wire Send    Left    01ff00
-    ${status}=    Serial Read Until Regex    Robot: uart snd ([a-zA-Z]+) ([0-9a-f]+)
+    ${status}=    Serial Read Until Regex    Robot: uart snd ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    left
-    Should Be Equal    ${status}[1]    01ff00
+    ${status}=    Serial Read Until Regex    Robot: snd ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    01ff00
     Single Wire Send    Right    01ff00
-    ${status}=    Serial Read Until Regex    Robot: uart snd ([a-zA-Z]+) ([0-9a-f]+)
+    ${status}=    Serial Read Until Regex    Robot: uart snd ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    right
-    Should Be Equal    ${status}[1]    01ff00
+    ${status}=    Serial Read Until Regex    Robot: snd ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    01ff00
     Single Wire Send    Both    01ff00
-    ${status}=    Serial Read Until Regex    Robot: uart snd ([a-zA-Z]+) ([0-9a-f]+)
+    ${status}=    Serial Read Until Regex    Robot: uart snd ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    both
-    Should Be Equal    ${status}[1]    01ff00
-    Single Wire Request    Left    01ff00
-    ${status}=    Serial Read Until Regex    Robot: uart req ([a-zA-Z]+) ([0-9a-f]+)
+    ${status}=    Serial Read Until Regex    Robot: snd ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    01ff00
+    ${status}=    Serial Read Until Regex    Robot: snd ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    01ff00
+
+Single wire req
+    Single Wire Request    Left    010b00     4
+    ${status}=    Serial Read Until Regex    Robot: uart req ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    left
-    Should Be Equal    ${status}[1]    01ff00
-    Single Wire Request    Right    01ff00
-    ${status}=    Serial Read Until Regex    Robot: uart req ([a-zA-Z]+) ([0-9a-f]+)
+    ${status}=    Serial Read Until Regex    Robot: recv ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    020c0101
+    Single Wire Request    Right    010b00    4
+    ${status}=    Serial Read Until Regex    Robot: uart req ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    right
-    Should Be Equal    ${status}[1]    01ff00
-    Single Wire Request    Both    01ff00
-    ${status}=    Serial Read Until Regex    Robot: uart req ([a-zA-Z]+) ([0-9a-f]+)
+    ${status}=    Serial Read Until Regex    Robot: recv ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    020c0101
+    Single Wire Request    Both    010b00     4
+    ${status}=    Serial Read Until Regex    Robot: uart req ([a-zA-Z]+)
     Should Be Equal    ${status}[0]    both
-    Should Be Equal    ${status}[1]    01ff00
+    ${status}=    Serial Read Until Regex    Robot: recv ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    020c0101
+    ${status}=    Serial Read Until Regex    Robot: recv ([0-9a-f]+)
+    Should Be Equal    ${status}[0]    020c0101
 
 Reset
     Reset
