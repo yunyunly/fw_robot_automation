@@ -334,17 +334,19 @@ class ChargingCaseLib:
             param = [SIDE.BOTH.value]
         else:
             raise Exception("Invalid Snd Side")
+        hexdata = []
         for i in range(0, len(data)):
             if (i & 0x1) == 1:
                 continue
             v = int(data[i:i+2],16)
-            param.append(v)
+            hexdata.append(v)
+        param += [len(hexdata)] + hexdata
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0,0]
         self.blue.ble_send_case(cmd+desc+param)       
         return 
 
-    def single_wire_request(self, side:str, data:str):
+    def single_wire_request(self, side:str, data:str, recvLen:int):
         """Let charging case send given message to hearing aids and wait for response via single wire
         
         Examples:
@@ -362,11 +364,13 @@ class ChargingCaseLib:
             param = [SIDE.BOTH.value]
         else:
             raise Exception("Invalid Req Side")
+        hexdata = []
         for i in range(0, len(data)):
             if (i & 0x1) == 1:
                 continue
             v = int(data[i:i+2],16)
-            param.append(v)
+            hexdata.append(v)
+        param += [len(hexdata)] + hexdata + [recvLen]
         cmd = [(value >> 8) & 0xff, value & 0xff]
         desc = [0,0]
         self.blue.ble_send_case(cmd+desc+param)       

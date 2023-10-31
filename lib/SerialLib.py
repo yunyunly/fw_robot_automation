@@ -17,33 +17,33 @@ class Logger(object):
         self.more = threading.Event()
         return 
 
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(Logger, cls).__new__(cls)
-        return cls.instance
+    # def __new__(cls):
+    #     if not hasattr(cls, 'instance'):
+    #         cls.instance = super(Logger, cls).__new__(cls)
+    #     return cls.instance
 
     def io_handler(self):
         self.io_opened = True 
         while (True) :
-            print("check break...")
+            # print("check break...")
             if self.opened == False:
                     break
             try:
-                print("reading...")
+                # print("reading...")
                 newline = self._serial.readline().decode("utf-8").strip()
-                if newline == "":
-                    continue
-                print(f"readline {newline}")
-                print("check waiting...")
-                if self.is_newline_waited():
-                    print("notify wait flag...")
-                    self.notify_newline()
             except:
                 newline = "serial closed"
-            timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')
+            if newline == "":
+                continue
+            timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')[:-3]
             log_entry = f"{self.total_idx}[{timestamp}] {newline}"
             self.total_idx +=1
             self.logs.append(log_entry)
+            # print(f"readline {newline}")
+            #print("check waiting...")
+            if self.is_newline_waited():
+                # print("notify wait flag...")
+                self.notify_newline()
         self.io_opened = False 
 
     def open(self, port, bard_rate):
@@ -125,11 +125,18 @@ class SerialLib(object):
     bard rate: 115200 
     """
     def __init__(self):
-        self.logger = Logger()
-        self.results = []
-        self.threads = []
-        self.threads_cnt = 0
         return 
+
+    # def __init__(self):
+    #     self.case = Logger() 
+    #     self.left = Logger() 
+    #     self.right = Logger() 
+    #
+    #     self.logger = Logger()
+    #     self.results = []
+    #     self.threads = []
+    #     self.threads_cnt = 0
+    #     return 
 
     def open_serial_port(self, port, bard_rate):
         """Open serial port with specified bard rate.
@@ -139,6 +146,7 @@ class SerialLib(object):
         | Open Serial Port | "/dev/ttyUSB3" | 1152000 |
         """
         self.logger.open(port, bard_rate)
+        return self.logger
 
     def close_serial_port(self):
         """Close current serial port.
@@ -278,8 +286,10 @@ class SerialLib(object):
 
 
 if __name__ == "__main__":
-    sl = SerialLib()
-    sl.open_serial_port("/dev/ttyACM0", 115200)
+    case = SerialLib() 
+    ha = SerialLib() 
+    case.open_serial_port("/dev/ttyACM0", 115200)
+    ha.open_serial_port("/dev/ttyUSB0", 1152000)
     # for i in range(1, 40):
     #     print("newest",sl.serial_read_newest())
     #     time.sleep(0.1)
@@ -295,15 +305,19 @@ if __name__ == "__main__":
     # for i in range (1, 5):
     #     print("int", sl.serial_read_until_regex("shutdown count down ([0-9]+)"))
     # sl.save()
-    sl.serial_parallel_read_until_regex("Btn: ([a-zA-Z]+)")
-    # print(a)
-    sl.serial_parallel_read_until("Btn: wait")
-    # print(b)
-    results = sl.serial_parallel_wait()
-    print(results)
-    sl.serial_parallel_read_until("Btn: notified")
-    sl.serial_parallel_read_until("Btn: wait")
-    results = sl.serial_parallel_wait()
-    print(results)
+    # sl.serial_parallel_read_until_regex("Btn: ([a-zA-Z]+)")
+    # # print(a)
+    # sl.serial_parallel_read_until("Btn: wait")
+    # # print(b)
+    # results = sl.serial_parallel_wait()
+    # print(results)
+    # sl.serial_parallel_read_until("Btn: notified")
+    # sl.serial_parallel_read_until("Btn: wait")
+    # results = sl.serial_parallel_wait()
+    # print(results)
+    for i in range(100):
+        #print(case.serial_read_blocking())
+        print(ha.serial_read_blocking())
     # # results = await asyncio.gather(*tasks)
-    sl.close_serial_port()
+    case.close_serial_port()
+    ha.close_serial_port()
