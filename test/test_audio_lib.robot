@@ -15,12 +15,14 @@ Audio find dev
     Should Be True    ${id} > 0
 
 Audio play a2dp 
-    Audio Get Dev Id
+    ${id}=    Audio Get Dev Id
+	Should Be True    ${id} > 0
 	Audio Use A2DP
 	Audio Play Simple Audio    5
 
 Audio play hfp 
-    Audio Get Dev Id
+    ${id}=    Audio Get Dev Id
+	Should Be True    ${id} > 0
 	Audio Use HFP
 	Audio Play Simple Audio    5
 
