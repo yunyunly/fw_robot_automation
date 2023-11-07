@@ -17,11 +17,16 @@ class AudioLib(object):
         self.id_list = []
         return 
     
-    def get_dev_id(self):
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(AudioLib, cls).__new__(cls)
+        return cls.instance
+
+    def audio_get_dev_id(self):
         """ Check and update bluetooth sound card information
             
         Examples:
-        |Get Dev Id|
+        |Audio Get Dev Id|
         """
         output = ""
         self.id_list = []
@@ -39,51 +44,66 @@ class AudioLib(object):
         else:
             return -1
 
-    def use_a2dp(self):
+    def audio_use_A2DP(self):
         """ Set current bluetooth sound card use profile A2DP 
         
         Examples:
-        |Use A2dp|
+        |Audio Use A2DP|
         """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
         ret = 1 
         try:
-            ret = subprocess.check_call(["pactl","set-card-profile", str(self.id_list[0]), "a2dp-sink"])
+            ret = subprocess.check_call(["pactl","set-card-profile", str(self.id_list[0]), "a2dp-sink-sbc"])
         except:
             pass
         return ret 
 
-    def use_hfp(self):
-        """ Set current bluetooth sound card use profile HFP """
-        if len(self.id_list)==0 :
-            raise Exception("No Device Id Found")
-        ret = 1
-        try:
-            ret = subprocess.check_call(["pactl","set-card-profile", str(self.id_list[0]), "headset-head-unit"])
-        except:
-            pass 
-        return ret
-    
-    def play_simple_audio(self, timeout=None):
-        if len(self.id_list)==0 :
-            raise Exception("No Device Id Found")
-        return self.play_audio("/home/firmware/audio/Big Band.wav", timeout) 
-
-    def play_audio(self, filepath:str, timeout=None):
+    def audio_use_HFP(self):
+        """ Set current bluetooth sound card use profile HFP 
+        
+        Examples:
+        |Audio Use HFP|
+        """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
         ret = 0
         try:
+            ret = subprocess.check_call(["pactl","set-card-profile", str(self.id_list[0]), "headset-head-unit"])
+        except:
+            ret = -1 
+        return ret
+
+    def audio_play_simple_audio(self, timeout=None):
+        """Examples:
+        |Audio Play Simple Audio|
+        |${ret}= | Audio Play Simple Audio|
+        """
+        if len(self.id_list)==0 :
+            raise Exception("No Device Id Found")
+        return self.audio_play_audio("/home/firmware/audio/Big Band.wav", timeout) 
+
+    def audio_play_audio(self, filepath:str, timeout=None):
+        """Examples:
+        |Audio Play Audio|
+        |${ret}=    |Audio Play Audio
+        """
+        if len(self.id_list)==0 :
+            raise Exception("No Device Id Found")
+        ret = 0
+        if timeout != None:
+            if type(timeout) == type("0"):
+                timeout = int(timeout)
+        try:
             ret = subprocess.check_call(["paplay", filepath], timeout=timeout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except:
-            pass
+            ret = -1
         return ret
 
 
-if __name__ == "__main__":
-    a = AudioLib()
-    id = a.get_dev_id()
-    if id > 0 :
-        a.use_a2dp()
-        a.play_simple_audio(3)
+# if __name__ == "__main__":
+#     a = AudioLib()
+#     id = a.audio_get_dev_id()
+#     if id > 0 :
+#         a.audio_use_a2dp()
+#         a.audio_play_simple_audio(3)
