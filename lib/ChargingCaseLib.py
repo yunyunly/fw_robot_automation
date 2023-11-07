@@ -379,9 +379,8 @@ class ChargingCaseLib:
 
 
 
-# if __name__ == "__main__":
-#     cc = ChargingCaseLib()
-    #cc.single_wire_send()
-    #cc.case_close()
-    #cc.print_info()
+if __name__ == "__main__":
+    cc = ChargingCaseLib()
+    cc.connect_charging_case()
+    cc.case_open()
 

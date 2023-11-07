@@ -13,11 +13,12 @@ class BluetoothLib(object):
     Do not suggest you use its any API in test cases.
     """
     charging_case_header = 9
+    hci_id = 1
     def __init__(self):
         self.bus = dbus.SystemBus()
     # get bluez object
         self.bluez_obj = self.bus.get_object("org.bluez", "/org/bluez")
-        self.adapter_obj = self.bus.get_object("org.bluez", "/org/bluez/hci0")
+        self.adapter_obj = self.bus.get_object("org.bluez", f"/org/bluez/hci{self.hci_id}")
         self.om_if = dbus.Interface(
             self.bus.get_object("org.bluez", "/"), 
             "org.freedesktop.DBus.ObjectManager"
@@ -32,7 +33,7 @@ class BluetoothLib(object):
         |Connect| D0:11:22:33:44:55 |
         """
         dev_addr = addr.replace(":", "_")
-        dev_path = f'/org/bluez/hci0/dev_{dev_addr}'
+        dev_path = f'/org/bluez/hci{self.hci_id}/dev_{dev_addr}'
         Console(f"Connect To {dev_path}")
         Console("Discovering Device")
         cached = len([x for x in self.om_if.GetManagedObjects() if dev_addr in x]) != 0
