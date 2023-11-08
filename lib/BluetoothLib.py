@@ -13,7 +13,7 @@ class BluetoothLib(object):
     Do not suggest you use its any API in test cases.
     """
     charging_case_header = 9
-    hci_id = 1
+    hci_id = 0
     def __init__(self):
         self.bus = dbus.SystemBus()
     # get bluez object
@@ -119,7 +119,6 @@ class BluetoothLib(object):
 
     def ble_send_case(self, data):
         """Send data to connected charging case"""
-        Console("Send To Case")
         self.send(self.case_char_if, [self.charging_case_header] + data)
         return     
 
