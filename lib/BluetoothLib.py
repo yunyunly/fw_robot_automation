@@ -106,7 +106,7 @@ class BluetoothLib(object):
             time.sleep(1)
             cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
         self.hearing_aids_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
-        print("Case Char Interface", self.hearing_aids_char_if)
+        print("HA Char Interface", self.hearing_aids_char_if)
         return 
 
     def is_ble_connect_hearing_aids(self, device_addr):
