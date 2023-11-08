@@ -2,77 +2,92 @@
 Documentation     Test cases for testing serial library
 ...
 ...               All keywords constructed from ``SerialLib.py``.
-Test Setup        Open Serial Port    /dev/ttyACM0    115200
-Test Teardown     Close Serial Port
+Suite Setup       Serial Open All
+Suite Teardown    Serial Close All
+Test Setup
+Test Teardown
 Default Tags      Serial
 Library           ../lib/SerialLib.py
 
 *** Test Cases ***
-Open and close serial port
-    [Setup]
-    Open Serial Port    /dev/ttyACM0    115200
-    Close Serial Port
-    [Teardown]
-
-Serial read latest
-    ${line} =    Serial Read Latest
-    Log    ${line}
-
-Serial read newest
-    FOR    ${i}    IN RANGE    1    1000
-        ${line0} =    Serial Read Newest
-        LOG    ${line0}
-        IF    "${line0}" != "${None}"
-            BREAK
-        END
-        Sleep    100ms
-    END
-    ${line1} =    Serial Read Newest
-    Should Not Be Equal    ${line0}    ${line1}
+Serial read not blocking
+        ${line} =    Serial Read    Case
+        Log    ${line}
+        ${line} =    Serial Read    Left
+        Log    ${line}
 
 Serial read blocking
-    FOR    ${/}    IN RANGE    1    10
-        ${line} =    Serial Read Blocking
-        Should Not Be Equal    ${line}    None
-    END
+        FOR    ${i}    IN RANGE    1    10
+                ${line0} =    Serial Read Blocking    Case
+                LOG    ${line0}
+                ${line0} =    Serial Read Blocking    Left
+                LOG    ${line0}
+        END
 
 Serial read until string
-    ${line} =    Serial Read Until    heartbeat
+        ${line} =    Serial Read Until    Case    heartbeat
+        ${line} =    Serial Read Until    Left    watchdog
+        Log    ${line}
 
 Serial read until regex match string
-    ${ret}=    Serial Read Until Regex    heart(.)
-    Should Be Equal    ${ret}[0]    b
+        ${ret}=    Serial Read Until Regex    Case    heart(.)
+        Should Be Equal    ${ret}[0]    b
+        ${ret}=    Serial Read Until Regex    Left    feed (.)
+        Should Be Equal    ${ret}[0]    w
 
 Serial read until regex match int
-    ${ret}=    Serial Read Until Regex    send event ([0-9]+)
-    Should Be Equal    ${ret}[0]    255
+        ${ret}=    Serial Read Until Regex    Case    send event ([0-9]+)
+        Should Be Equal    ${ret}[0]    255
+        ${ret}=    Serial Read Until Regex    Left    running mode: (.)
+        Should Be Equal    ${ret}[0]    0
 
 Serial read until regex match float
-    ${ret}=    Serial Read Until Regex    new curr: ([+-]?[0-9]+\\.[0-9]+)
-    Should Be True    ${ret}[0] < 32
+        ${ret}=    Serial Read Until Regex    Case    new curr: ([+-]?[0-9]+\\.[0-9]+)
+        Should Be True    ${ret}[0] < 32
 
 Serial write string
-    Serial Write String    abcdefg
+        Serial Write Str    Case    abcdefg
 
 Serial write hex
-    Serial Write Hex    ff00
+        Serial Write Hex    Case    ff00
+
+Serial read parallel
+        Serial Parallel Read Until    Case    heartbeat
+        Serial Parallel Read Until    Left    watchdog
+    ${ret}=    Serial Parallel Wait    [Case, Left]
+    Log    ${ret}
+
+Serial read parallel regex
+    ${ret}=    Serial Parallel Read Until Regex    Case    heart(.)
+    ${ret}=    Serial Parallel Read Until Regex    Left    feed (.)
+    ${ret}=    Serial Parallel Wait    Case Left
+    Should Be Equal    ${ret}[Case][0][0]    b
+    Should Be Equal    ${ret}[Left][0][0]    w
 
 *** Keywords ***
+Serial Open All
+    Serial Open Port    Case    /dev/ttyACM0    115200
+    Serial Open Port    Left    /dev/ttyUSB0    1152000
+
+Serial Close All
+    Serial Close Port    Case
+    Serial Close Port    Left
+
 Read Until Regex
-    Log    Deprecated
-    # [Arguments] \ \ \ ${pattern}
-    # ${ret} \ \ \ Set Variable \ \ \ null
-    # WHILE \ \ \ True
-        # ${newline}= \ \ \ Serial Read Newest
-        # IF \ \ \ "${newline}" == "${None}"
-            # CONTINUE
+        Log    Deprecated
+        # [Arguments] \ \ \ ${pattern}
+        # ${ret} \ \ \ Set Variable \ \ \ null
+        # WHILE \ \ \ True
+                # ${newline}= \ \ \ Serial Read Newest
+                # IF \ \ \ "${newline}" == "${None}"
+                        # CONTINUE
+                # END
+                # IF \ \ \ "${newline}" == ""
+                        # CONTINUE
+                # END
+                # ${ret}= \ \ \ Should Match Regexp \ \ \ ${newline} \ \ \ ${pattern}
+                # IF \ \ \ "${ret}" != "${None}"
+                        # BREAK
+                # END
         # END
-        # IF \ \ \ "${newline}" == ""
-            # CONTINUE
-        # END
-        # ${ret}= \ \ \ Should Match Regexp \ \ \ ${newline} \ \ \ ${pattern}
-        # IF \ \ \ "${ret}" != "${None}"
-            # BREAK
-        # END
-    # END
-    # RETURN \ \ \ ${ret}
+        # RETURN \ \ \ ${ret}
