@@ -17,7 +17,7 @@ class BluetoothLib(object):
         self.bus = dbus.SystemBus()
     # get bluez object
         self.bluez_obj = self.bus.get_object("org.bluez", "/org/bluez")
-        self.adapter_obj = self.bus.get_object("org.bluez", "/org/bluez/hci0")
+        self.adapter_obj = self.bus.get_object("org.bluez", "/org/bluez/hci1")
         self.om_if = dbus.Interface(
             self.bus.get_object("org.bluez", "/"), 
             "org.freedesktop.DBus.ObjectManager"
@@ -32,7 +32,7 @@ class BluetoothLib(object):
         |Connect| D0:11:22:33:44:55 |
         """
         dev_addr = addr.replace(":", "_")
-        dev_path = f'/org/bluez/hci0/dev_{dev_addr}'
+        dev_path = f'/org/bluez/hci1/dev_{dev_addr}'
         Console(f"Connect To {dev_path}")
         Console("Discovering Device")
         cached = len([x for x in self.om_if.GetManagedObjects() if dev_addr in x]) != 0
@@ -99,18 +99,27 @@ class BluetoothLib(object):
     def ble_connect_hearing_aids(self, addr = "D0:14:11:20:20:18"):
         """Connect to given address hearing aids, no matter whether it is cached"""
         self.hearing_aids, self.hearing_aids_path = self.connect(addr)
-        char_path = f'{self.hearing_aids_path}/service0019/char001a' 
+        char_path = f'{self.hearing_aids_path}/service001a/char001f' 
         cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
         while not cached:
             print("Discovery service and characteristic")
             time.sleep(1)
             cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
         self.hearing_aids_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
+        print("Case Char Interface", self.hearing_aids_char_if)
         return 
 
-    def ble_disconnect_hearing_aids(self):
-        """Not implemented yet"""
-        return 
+    def is_ble_connect_hearing_aids(self, device_addr):
+        dev_path = "/org/bluez/hci1/dev_" + device_addr.replace(":", "_")
+        device = dbus.Interface(self.bus.get_object("org.bluez", dev_path), "org.freedesktop.DBus.Properties")
+        return device.Get("org.bluez.Device1", "Connected")
+    
+    def ble_disconnect_hearing_aids(self, device_addr):
+
+        device_path = "/org/bluez/hci1/dev_" + device_addr.replace(":", "_")
+        device = dbus.Interface(self.bus.get_object("org.bluez", device_path),"org.bluez.Device1")
+        device.Disconnect()
+        return
 
     def ble_disconnect_case(self):
         """Not implemented yet"""

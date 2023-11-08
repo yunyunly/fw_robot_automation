@@ -54,5 +54,57 @@
     "Rst Long": "0x04",
     "Left": "0x05",
     "Right": "0x06"
+  },
+  "cmd_tpye": {
+    "Status Check": "0x01",
+    "App Control": "0x02",
+    "Audio Chain": "0x03",
+    "Case Related With App": "0x04",
+    "Echo Control": "0x05"
+  },
+  "check": {
+    "check general status": "0x01",
+    "start up check status": "0x02",
+    "app background mode check status": "0x03",
+    "app send logs acknowledge": "0x04",
+    "app userstats mode check status": "0x05",
+    "app send userstats acknowledge": "0x06",
+    "app fetch bt device info": "0x07",
+    "ha send double tap notification": "0x08",
+    "check hardware version": "0x09"
+  },
+  "control": {
+    "switch device mode": "0x01",
+    "set volume": "0x02",
+    "set remote fitting mode": "0x03",
+    "set tone": "0x04",
+    "get latest noise": "0x05",
+    "lock device": "0x06",
+    "set prompt volume": "0x07",
+    "set batt saving automatic": "0x08",
+    "get ltk data": "0x09",
+    "set updated pmu time": "0x0a"
+  },
+  "audio": {
+    "switch running mode": "0x01",
+    "set beamforming onoff": "0x02",
+    "update hearing profile": "0x03",
+    "send config to fw": "0x04",
+    "send test config in remote fiting": "0x05",
+    "switch ansi setting": "0x06",
+    "finetune ansi rts gain": "0x07"
+  },
+  "case_related_with_app": {
+    "case startup info to app": "0x01",
+    "case func button pressed to app": "0x02",
+    "case long bar l pressed to app": "0x03",
+    "case long bar r pressed to app": "0x04"
+  },
+  "echo_control": {
+    "case send startup info": "0x01",
+    "case func button pressed": "0x02",
+    "case long bar l pressed": "0x03",
+    "case long bar r pressed": "0x04",
+    "case pairing completed": "0x05"
   }
 }
