@@ -17,7 +17,7 @@ def struct{
 """
 
 __version__ = "0.1"
-class HearingAidLib:
+class HearingAidsLib:
     """Library for control HA
 
        Most operations are implemented as sending ble message to HA  
@@ -29,7 +29,7 @@ class HearingAidLib:
         print("HearingAid Inited")
         return 
 
-    def connect_hearing_aid(self, addr="11:11:22:33:33:81"):
+    def connect_hearing_aids(self, addr="11:11:22:33:33:81"):
         """Connect To hearing aid before you send any message to it.  
         
         Examples:
@@ -51,7 +51,7 @@ class HearingAidLib:
     
     def check_ble_conn_with_HA(self, addr="11:11:22:33:33:81"):
         """Check if ble connected with HA """
-        return self.blue.is_ble_connect_hearing_aids(addr)
+        return self.blue.ble_hearing_aids_connected(addr)
     
     
     def check_general_status(self):
