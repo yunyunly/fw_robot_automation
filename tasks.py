@@ -22,6 +22,10 @@ def kw_docs(ctx):
            str(Path("docs/SerialLib.html")))
     libdoc(str(Path("lib/BluetoothLib.py")),
            str(Path("docs/BluetoothLib.html")))
+    libdoc(str(Path("lib/AudioLib.py")),
+           str(Path("docs/AudioLib.html")))
+    libdoc(str(Path("lib/HearingAidsLib.py")),
+           str(Path("docs/HearingAidsLib.html")))
 
 
 @task
