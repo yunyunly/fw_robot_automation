@@ -1,4 +1,4 @@
-# Update Time 23-11-13 14:57:05
+# Update Time 23-11-13 16:03:01
 from enum import Enum
 class  ROBOTC (Enum):
     PRINT_INFO=0x00
@@ -35,20 +35,20 @@ class  ROBOTE (Enum):
     BUTTON_LEFT_PRESS=0x0502
     BUTTON_RIGHT_PRESS=0x0503
     LOG_INNOISE_STATE=0xff01
-    LOG_BF_STATE=0xff02
-    LOG_VOLUME=0xff03
-    LOG_WEAR_STATE=0xff04
-    LOG_A2DP_STATE=0xff05
-    LOG_HFP_STATE=0xff06
-    LOG_TWS_STATE=0xff07
-    LOG_VOLT=0xff08
-    LOG_SOC=0xff09
-    LOG_MCU_FREQ=0xff0a
-    WEAR_ON=0xfe01
-    WEAR_OFF=0xfe02
-    DOUBLE_TAP=0xfe03
-    RESET=0xfe04
-    POWER_OFF=0xfe05
+    LOG_BF_STATE=0xfe02
+    LOG_VOLUME=0xfe03
+    LOG_WEAR_STATE=0xfe04
+    LOG_A2DP_STATE=0xfe05
+    LOG_HFP_STATE=0xfe06
+    LOG_TWS_STATE=0xfe07
+    LOG_VOLT=0xfe08
+    LOG_SOC=0xfe09
+    LOG_MCU_FREQ=0xfe0a
+    WEAR_ON=0xfe0b
+    WEAR_OFF=0xfe0c
+    DOUBLE_TAP=0xfe0d
+    RESET=0xfe0e
+    POWER_OFF=0xfe0f
 class  SIDE (Enum):
     LEFT=0x01
     RIGHT=0x02
