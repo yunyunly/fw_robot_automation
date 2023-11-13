@@ -296,7 +296,9 @@ class SerialLib(object):
         | Serial Read Until | Hello, World! | timeout=10 |
         """
         inst = self.case 
-        results = self.case_results
+        results = self.case_results 
+        if timeout != None:
+            timeout = float(timeout)
         match kind:
             case "Case":
                 inst = self.case
@@ -310,7 +312,7 @@ class SerialLib(object):
             case _:
                 raise Exception("Invalid kind")
         start_time = time.time()
-        ret = ""
+        ret = None
         id =uuid4()
         while True:
             newline = inst.read_blocking(id)
