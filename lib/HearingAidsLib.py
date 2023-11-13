@@ -3,6 +3,8 @@ import json
 import os
 import sys 
 from config.robot_defs import ROBOTC 
+from config.robot_defs import ROBOTE
+from config.robot_defs import CHIP
 from config.robot_defs import SIDE 
 from config.robot_defs import BUTTON
 from config.robot_defs import CMD_TPYE, CHECK, CONTROL, AUDIO, CASE_RELATED_WITH_APP, ECHO_CONTROL
@@ -10,11 +12,18 @@ import robot.api.logger as Logger
 
 """ 
 def struct{
-    u16 cmd_id
-    u16 cmd_params
+    u8  class  
+    u8  cmd_type
+    u16 length 
     u8  params[16]
 } ble msg
 """
+
+def u16ToField(x:int) -> list:
+    if x >= 0 and x <= 65535:
+        return [x & 0xff00 >> 8, x & 0x00ff]
+    else:
+        raise Exception("Over/Under flow")
 
 __version__ = "0.1"
 class HearingAidsLib:
@@ -49,11 +58,142 @@ class HearingAidsLib:
         self.blue.ble_disconnect_hearing_aids(addr)
         return 
     
-    def check_ble_conn_with_HA(self, addr="11:11:22:33:33:81"):
-        """Check if ble connected with HA """
+    def hearing_aids_connected(self, addr=None):
         return self.blue.ble_hearing_aids_connected(addr)
     
+    def log_innoise_state(self):
+        head = u16ToField(ROBOTE.LOG_INNOISE_STATE.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
     
+    def log_bf_state(self):
+        head = u16ToField(ROBOTE.LOG_BF_STATE.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_volume(self):
+        head = u16ToField(ROBOTE.LOG_VOLUME.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_wear_state(self):
+        head = u16ToField(ROBOTE.LOG_WEAR_STATE.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+
+    def log_a2dp_state(self):
+        head = u16ToField(ROBOTE.LOG_A2DP_STATE.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_hfp_state(self):
+        head = u16ToField(ROBOTE.LOG_HFP_STATE.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_tws_state(self):
+        head = u16ToField(ROBOTE.LOG_TWS_STATE.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_volt(self):
+        head = u16ToField(ROBOTE.LOG_VOLT.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_soc(self):
+        head = u16ToField(ROBOTE.LOG_SOC.value)
+        cmd = head + [0,0]
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def log_mcu_freq(self, core):
+        head = u16ToField(ROBOTE.LOG_MCU_FREQ.value)
+        content: list
+        if core == "M55":
+            content = [CHIP.M55.value]
+        elif core == "M33":
+            content = [CHIP.M33.value]
+        else:
+            raise Exception()
+        length = u16ToField(len(content))
+        cmd = head + length + content 
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def wear_on(self, side):
+        head = u16ToField(ROBOTE.WEAR_ON.value)
+        content:list
+        if side == "Left":
+            content = [SIDE.LEFT.value]
+        elif side == "Right":
+            content = [SIDE.RIGHT.value]
+        elif side == "Both":
+            content = [SIDE.BOTH.value]
+        else:
+            raise Exception()
+        length = u16ToField(len(content))
+        cmd = head + length + content 
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def wear_off(self, side):
+        head = u16ToField(ROBOTE.WEAR_OFF.value)
+        content:list
+        if side == "Left":
+            content = [SIDE.LEFT.value]
+        elif side == "Right":
+            content = [SIDE.RIGHT.value]
+        elif side == "Both":
+            content = [SIDE.BOTH.value]
+        else:
+            raise Exception()
+        length = u16ToField(len(content))
+        cmd = head + length + content 
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def double_tap(self, side):
+        head = u16ToField(ROBOTE.DOUBLE_TAP.value)
+        content:list
+        if side == "Left":
+            content = [SIDE.LEFT.value]
+        elif side == "Right":
+            content = [SIDE.RIGHT.value]
+        elif side == "Both":
+            content = [SIDE.BOTH.value]
+        else:
+            raise Exception()
+        length = u16ToField(len(content))
+        cmd = head + length + content 
+        self.blue.ble_send_hearing_aids(cmd)
+
+    def reset(self, side):
+        head = u16ToField(ROBOTE.RESET.value)
+        content:list
+        if side == "Left":
+            content = [SIDE.LEFT.value]
+        elif side == "Right":
+            content = [SIDE.RIGHT.value]
+        elif side == "Both":
+            content = [SIDE.BOTH.value]
+        else:
+            raise Exception()
+        length = u16ToField(len(content))
+        cmd = head + length + content 
+        self.blue.ble_send_hearing_aids(cmd)
+
+    def power_off(self, side):
+        head = u16ToField(ROBOTE.POWER_OFF.value)
+        content:list
+        if side == "Left":
+            content = [SIDE.LEFT.value]
+        elif side == "Right":
+            content = [SIDE.RIGHT.value]
+        elif side == "Both":
+            content = [SIDE.BOTH.value]
+        else:
+            raise Exception()
+        length = u16ToField(len(content))
+        cmd = head + length + content 
+        self.blue.ble_send_hearing_aids(cmd)
+
     def check_general_status(self):
         """Let HA check general status  
 
