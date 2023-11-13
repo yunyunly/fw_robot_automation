@@ -6,6 +6,8 @@ from config.robot_defs import ROBOTC
 from config.robot_defs import ROBOTE
 from config.robot_defs import CHIP
 from config.robot_defs import SIDE 
+from config.robot_defs import MODE0 
+
 from config.robot_defs import BUTTON
 from config.robot_defs import CMD_TPYE, CHECK, CONTROL, AUDIO, CASE_RELATED_WITH_APP, ECHO_CONTROL
 import robot.api.logger as Logger 
@@ -285,22 +287,82 @@ class HearingAidsLib:
         cmd = head + length + content 
         self.blue.ble_send_hearing_aids(cmd)
 
-    def check_general_status(self):
-        """Let HA check general status  
+    def switch_mode(self, mode):
+        """Let hearing aids switch to a given mode
 
         Examples:
-        |Check General Status|
+        | Switch Mode | Normal |
+        | Switch Mode | Innoise | 
+        | Switch Mode | Remote Fitting |
+        | Switch Mode | ANSI |
+        | Switch Mode | Hearing Test |
         """
+        head = u16ToField(ROBOTE.SWITCH_DEVICE_MODE.value)
+        content:list 
+        match mode:
+            case "Normal":
+                content = [MODE0.NORMAL.value]
+            case "Innoise":
+                content = [MODE0.INNOISE.value]
+            case "Remote Fitting":
+                content = [MODE0.REMOTE_FITTING.value]
+            case "ANSI":
+                content = [MODE0.ANSI.value]
+            case "Hearing Test":
+                content = [MODE0.HEARING_TEST.value]
+            case _:
+                raise Exception() 
+        length = u16ToField(len(content))
+        cmd = head + length + content
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def switch_beamforming(self, on):
+        """Let hearing aids turn on/turn off beamforming
+
+        Examples:
+        | Switch Beamforming | On |
+        | Switch Beamforming | Off | 
+        """
+        head = u16ToField(ROBOTE.SWITCH_BEAMFORMING.value)
+        content:list 
+        match on:
+            case "On":
+                content = [1]
+            case "Off":
+                content = [0]
+            case _:
+                raise Exception() 
+        length = u16ToField(len(content))
+        cmd = head + length + content
+        self.blue.ble_send_hearing_aids(cmd)
+    
+    def switch_afc(self, on):
+        """Not Supported by Orka, Don't Use It!
+        Let hearing aids turn on/turn off AFC
+
+        Examples:
+        | Switch Beamforming | On |
+        | Switch Beamforming | Off | 
+        """
+        head = u16ToField(ROBOTE.SWITCH_BEAMFORMING.value)
+        content:list 
+        match on:
+            case "On":
+                content = [MODE0.NORMAL.value]
+            case "Off":
+                content = [MODE0.INNOISE.value]
+            case _:
+                raise Exception() 
+        length = u16ToField(len(content))
+        cmd = head + length + content
+        self.blue.ble_send_hearing_aids(cmd)
+
+    def check_general_status(self):
         cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.CHECK_GENERAL_STATUS.value]
         self.blue.ble_send_hearing_aids(cmd)
         return 
     
     def check_startup_info(self):
-        """Let HA check startup info  
-
-        Examples:
-        |Check Startup Info|
-        """
         cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.START_UP_CHECK_STATUS.value]
         self.blue.ble_send_hearing_aids(cmd)
         return
@@ -308,30 +370,6 @@ class HearingAidsLib:
     def fetch_bt_device_info(self):
 
         cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.START_UP_CHECK_STATUS.value]
-        self.blue.ble_send_hearing_aids(cmd)
-        return
-    
-    def switch_to_normal_mode(self):
-        
-        cmd = [CMD_TPYE.AUDIO_CHAIN.value, AUDIO.SWITCH_RUNNING_MODE.value, 0, 1, 0]
-        self.blue.ble_send_hearing_aids(cmd)
-        return
-
-    def switch_to_innoise_mode(self):
-        
-        cmd = [CMD_TPYE.AUDIO_CHAIN.value, AUDIO.SWITCH_RUNNING_MODE.value, 0, 1, 1]
-        self.blue.ble_send_hearing_aids(cmd)
-        return
-    
-    def turn_on_beamforming(self):
-        
-        cmd = [CMD_TPYE.AUDIO_CHAIN.value, AUDIO.SET_BEAMFORMING_ONOFF.value, 0, 1, 1]
-        self.blue.ble_send_hearing_aids(cmd)
-        return
-    
-    def turn_off_beamforming(self):
-
-        cmd = [CMD_TPYE.AUDIO_CHAIN.value, AUDIO.SET_BEAMFORMING_ONOFF.value, 0, 1, 0]
         self.blue.ble_send_hearing_aids(cmd)
         return
     

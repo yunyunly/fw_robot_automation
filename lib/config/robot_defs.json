@@ -20,20 +20,6 @@
     "Not Implemented Yet": "0xff"
   },
   "robote": {
-    "Set Device Mode": "0x0201",
-    "Set Volume":"0x0202",
-    "Set Remote Fitting Mode":"0x0203",
-    "Set Tone":"0x0204",
-    "Get Env Noise":"0x0205",
-    "Set Device Lock": "0x0206",
-    "Set Prompt Volume": "0x0207",
-    "Switch Algo Mode": "0x0301",
-    "Switch Beamforming Mode": "0x0302",
-    "Hearing Profile": "0x0303",
-    "Switch Ansi Mode": "0x0306",
-    "Button Fn Press": "0x0501",
-    "Button Left Press": "0x0502",
-    "Button Right Press": "0x0503",
     "Log Innoise State": "0xff01",
     "Log Bf State":"0xfe02",
     "Log Volume":"0xfe03",
@@ -48,7 +34,21 @@
     "Wear Off":"0xfe0c",
     "Double Tap": "0xfe0d",
     "Reset": "0xfe0e",
-    "Power Off": "0xfe0f"
+    "Power Off": "0xfe0f",
+    "Switch Device Mode": "0x0301",
+    "Switch Beamforming": "0x0302",
+    "Set Device Mode": "0x0201",
+    "Set Volume":"0x0202",
+    "Set Remote Fitting Mode":"0x0203",
+    "Set Tone":"0x0204",
+    "Get Env Noise":"0x0205",
+    "Set Device Lock": "0x0206",
+    "Set Prompt Volume": "0x0207",
+    "Hearing Profile": "0x0303",
+    "Switch Ansi Mode": "0x0306",
+    "Button Fn Press": "0x0501",
+    "Button Left Press": "0x0502",
+    "Button Right Press": "0x0503"
   },
   "side": {
     "Left":"0x01",
@@ -66,6 +66,13 @@
   "chip": {
     "M55": "0x00",
     "M33": "0x01"
+  },
+  "mode0": {
+    "Normal": "0x00",
+    "Innoise": "0x01",
+    "Remote Fitting": "0x02",
+    "ANSI":"0x03",
+    "Hearing Test": "0x04"
   },
   "cmd_tpye": {
     "Status Check": "0x01",
