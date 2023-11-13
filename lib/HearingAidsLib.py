@@ -21,7 +21,7 @@ def struct{
 
 def u16ToField(x:int) -> list:
     if x >= 0 and x <= 65535:
-        return [x & 0xff00 >> 8, x & 0x00ff]
+        return [(x & 0xff00) >> 8, x & 0x00ff]
     else:
         raise Exception("Over/Under flow")
 
@@ -348,7 +348,8 @@ class HearingAidsLib:
         return
 
 
-# if __name__ == "__main__":
-#     cc = HearingAidLib()
-#     cc.connect_hearing_aid()
-#     cc.check_general_status()
+if __name__ == "__main__":
+    cc = HearingAidsLib()
+    cc.connect_hearing_aids("12:34:56:78:A0:B3")
+    cc.log_soc()
+    cc.log_volt()
