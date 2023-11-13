@@ -38,7 +38,7 @@ class HearingAidsLib:
         print("HearingAid Inited")
         return 
 
-    def connect_hearing_aids(self, addr="11:11:22:33:33:81"):
+    def connect_hearing_aids(self, addr):
         """Connect To hearing aid before you send any message to it.  
         
         Examples:
@@ -48,7 +48,7 @@ class HearingAidsLib:
         self.blue.ble_connect_hearing_aids(addr)
         return 
     
-    def disconnect_hearing_aids(self, addr="11:11:22:33:33:81"):
+    def disconnect_hearing_aids(self, addr):
         """Disconnect To hearing aid before you send any message to it.  
         
         Examples:
@@ -58,55 +58,111 @@ class HearingAidsLib:
         self.blue.ble_disconnect_hearing_aids(addr)
         return 
     
-    def hearing_aids_connected(self, addr=None):
+    def hearing_aids_connected(self, addr=None)-> bool:
+        """Return True if hearing aids connected via bluetooth, otherwise False
+
+        Examples:
+        |${ret}=    | Hearing Aids Connected |
+        """
         return self.blue.ble_hearing_aids_connected(addr)
     
     def log_innoise_state(self):
+        """Let hearing aids print a log that shows innoise state 
+
+        Examples:
+        |Log Innoise State|
+        """
         head = u16ToField(ROBOTE.LOG_INNOISE_STATE.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_bf_state(self):
+        """Let hearing aids print a log that shows beamforming state
+
+        Examples:
+        |Log Bf State|
+        """
         head = u16ToField(ROBOTE.LOG_BF_STATE.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_volume(self):
+        """Let hearing aids print a log that shows volume
+
+        Examples:
+        |Log Volume|
+        """
         head = u16ToField(ROBOTE.LOG_VOLUME.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_wear_state(self):
+        """Let hearing aids print a log that shows wear on/wear off state
+
+        Examples:
+        |Log Wear State|
+        """
         head = u16ToField(ROBOTE.LOG_WEAR_STATE.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
 
     def log_a2dp_state(self):
+        """Let hearing aids print a log that shows a2dp state
+
+        Examples:
+        |Log A2dp State|
+        """
         head = u16ToField(ROBOTE.LOG_A2DP_STATE.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_hfp_state(self):
+        """Let hearing aids print a log that shows hfp state
+
+        Examples:
+        |Log Hfp State|
+        """
         head = u16ToField(ROBOTE.LOG_HFP_STATE.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_tws_state(self):
+        """Let hearing aids print a log that shows tws state (whether two hearing aids are connected?)
+
+        Examples:
+        |Log Tws State|
+        """
         head = u16ToField(ROBOTE.LOG_TWS_STATE.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_volt(self):
+        """Let hearing aids print a log that shows battery voltage 
+
+        Examples:
+        |Log Volt|
+        """
         head = u16ToField(ROBOTE.LOG_VOLT.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_soc(self):
+        """Let hearing aids print a log that shows soc 
+
+        Examples:
+        |Log Soc|
+        """
         head = u16ToField(ROBOTE.LOG_SOC.value)
         cmd = head + [0,0]
         self.blue.ble_send_hearing_aids(cmd)
     
     def log_mcu_freq(self, core):
+        """Let hearing aids print a log that shows mcu frequency
+
+        Examples:
+        |Log Mcu Freq| M55 |
+        |Log Mcu Freq| M33 |
+        """
         head = u16ToField(ROBOTE.LOG_MCU_FREQ.value)
         content: list
         if core == "M55":
@@ -120,6 +176,13 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
     
     def wear_on(self, side):
+        """Let hearing aids somulate a wear on
+
+        Examples:
+        |Wear On| Left |
+        |Wear On| Right |
+        |Wear On| Both |
+        """
         head = u16ToField(ROBOTE.WEAR_ON.value)
         content:list
         if side == "Left":
@@ -135,6 +198,13 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
     
     def wear_off(self, side):
+        """Let hearing aids simulate a wear off 
+
+        Examples:
+        |Wear Off| Left |
+        | Wear Off | Right |
+        | Wear Off | Both |
+        """
         head = u16ToField(ROBOTE.WEAR_OFF.value)
         content:list
         if side == "Left":
@@ -150,6 +220,13 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
     
     def double_tap(self, side):
+        """Let hearing aids simulate a double tap 
+
+        Examples:
+        |Double Tap | Left |
+        |Double Tap | Right |
+        | Double Tap | Both |
+        """
         head = u16ToField(ROBOTE.DOUBLE_TAP.value)
         content:list
         if side == "Left":
@@ -165,6 +242,13 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
 
     def reset(self, side):
+        """Let hearing aids reset
+
+        Examples:
+        |Reset | Left |
+        |Reset | Right |
+        |Reset | Both |
+        """
         head = u16ToField(ROBOTE.RESET.value)
         content:list
         if side == "Left":
@@ -180,6 +264,13 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
 
     def power_off(self, side):
+        """Let hearing aids power off
+
+        Examples:
+        |Power Off | Left |
+        |Power Off | Right | 
+        |Power Off | Both |
+        """
         head = u16ToField(ROBOTE.POWER_OFF.value)
         content:list
         if side == "Left":
