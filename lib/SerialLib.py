@@ -370,7 +370,7 @@ class SerialLib(object):
             match = re.search(patt, newline)
 
             if match:
-                ret = match.groups()
+                ret = list(match.groups())
                 break
             
             if timeout is not None and time.time() - start_time >= timeout:
