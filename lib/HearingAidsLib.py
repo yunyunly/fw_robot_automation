@@ -391,3 +391,6 @@ if __name__ == "__main__":
     cc.connect_hearing_aids("12:34:56:78:A0:B3")
     cc.log_soc()
     cc.log_volt()
+    cc.switch_mode("Normal")
+    cc.switch_mode("Innoise")
+    cc.switch_beamforming("On")
