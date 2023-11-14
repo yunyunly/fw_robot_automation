@@ -1,66 +1,72 @@
 from pyftdi.ftdi import Ftdi
-from pyftdi import usbtools
+import time
 
 class PreludeControl:
     def __init__(self):
-        self.DEVICE1PID = 0xACE1
-        self.DEVICE2PID = 0xACE2
-        self.SWITCHPID = 0xACE3
-        self.SCANNERPID = 0xA4A7
-
-        self.DEVICE1SN = "FT66ORKAC"
-        self.DEVICE2SN = "FT66ORKAD"
-        self.SWITCHSN = "FT66ORKAA"
-
         self.RESET1 = 0x01
         self.RESET2 = 0x02
         self.VCHARGER1 = 0x04
         self.VCHARGER2 = 0x08
         self.POW1 = 0x10
         self.POW2 = 0x20
-        self.NumberOfDevice = 2
-        self.SPEAKP = 1
-        self.SPEAKN = 0
+        Ftdi.show_devices()
+        self.ft_handle = Ftdi()
+        self.ft_handle.open_bitbang_from_url("ftdi://ftdi:4232:FT66ORKA/1")
+        self.ft_handle.set_bitmode(0xFF, Ftdi.BitMode.BITBANG)
+        self.ft_handle.read_data_set_chunksize(4096)
+        self.ft_handle.write_data_set_chunksize(4096)
+        self.ft_handle.set_event_char(0, False)
+        self.ft_handle.set_latency_timer(16)
+        self.ft_handle.set_flowctrl("")
+        self.ft_handle.set_baudrate(62500)
+        self.communicate_ftdi(0xff, 0)
+    
+    def communicate_ftdi(self, gpio, state):
+        w_data_len = 7
+        data_out = bytearray([0] * w_data_len)
+        data_read = bytearray([0] * w_data_len)
 
-    def set_dx_config(self, pid, gpio_name, state):
-        ftdi = Ftdi()
-        
-        device_des = b" "
+        data_read = self.ft_handle.read_data(w_data_len)
+        for x in range(7):
+            data_out[x] = data_read[x]
+        data_out[6] = self.ft_handle.read_pins()
 
-        if pid == self.DEVICE1PID:
-            device_des = b"DEVICE1"
-        elif pid == self.DEVICE2PID:
-            device_des = b"DEVICE2"
-        elif pid == self.SWITCHPID:
-            device_des = b"SWITCH"
-
-        try:
-            ftdi.open_from_url(usbtools.usb_devstr_url(device_des))
-
-            w_data_len = 7
-            data_out = bytearray([0] * w_data_len)
-            data_read = ftdi.read_data_bytes(w_data_len)
-
-            for x in range(7):
-                data_out[x] = data_read[x]
-
-            if state == 1:
-                data_out[6] |= gpio_name
-            elif state == 0:
-                data_out[6] &= ~gpio_name
-
-            ftdi.write_data(data_out)
-
-            print("FT_Write successful")
-
-        except Exception as e:
-            print(f"Error: {e}")
-            return False
-
-        finally:
-            ftdi.close()
+        if state == 1:
+            data_out[6] |= gpio
+        elif state == 0:
+            data_out[6] &= ~gpio
+        self.ft_handle.write_data(data_out)
 
         return True
+    
+    def charge(self, enable):
+        if enable:
+            self.communicate_ftdi(self.VCHARGER1|self.VCHARGER2, 1)
+        else:
+            self.communicate_ftdi(self.VCHARGER1|self.VCHARGER2, 0)
+
+    def reset(self, enable):
+        if enable:
+            self.communicate_ftdi(self.RESET1|self.RESET2, 1)
+        else:
+            self.communicate_ftdi(self.RESET1|self.RESET2, 0)
+            
+    def close_ftdi(self):
+        self.ft_handle.close(freeze=True)
+
+
+if __name__ == "__main__":
+    prelude = PreludeControl()
+    print("prelude inited.")
+    time.sleep(0.5)
+    prelude.reset(1)
+    time.sleep(0.5)
+    prelude.reset(0)
+    time.sleep(0.5)
+    prelude.reset(1)
+    time.sleep(0.5)
+    prelude.reset(0)
+    prelude.close_ftdi()
 
 # Assuming you have the necessary definitions for Ftdi class methods,
 # you can use the class as follows:
