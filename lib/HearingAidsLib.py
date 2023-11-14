@@ -337,7 +337,7 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
     
     def switch_afc(self, on):
-        """Not Supported by Orka, Don't Use It!
+        """Not Supported by Orka now, Don't Use It!
         Let hearing aids turn on/turn off AFC
 
         Examples:
@@ -357,40 +357,30 @@ class HearingAidsLib:
         cmd = head + length + content
         self.blue.ble_send_hearing_aids(cmd)
 
-    def check_general_status(self):
-        cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.CHECK_GENERAL_STATUS.value]
-        self.blue.ble_send_hearing_aids(cmd)
-        return 
+    # def check_general_status(self):
+    #     cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.CHECK_GENERAL_STATUS.value]
+    #     self.blue.ble_send_hearing_aids(cmd)
+    #     return 
+    # 
+    # def check_startup_info(self):
+    #     cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.START_UP_CHECK_STATUS.value]
+    #     self.blue.ble_send_hearing_aids(cmd)
+    #     return
+    # 
+    # def fetch_bt_device_info(self):
+    #
+    #     cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.START_UP_CHECK_STATUS.value]
+    #     self.blue.ble_send_hearing_aids(cmd)
+    #     return
     
-    def check_startup_info(self):
-        cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.START_UP_CHECK_STATUS.value]
-        self.blue.ble_send_hearing_aids(cmd)
-        return
-    
-    def fetch_bt_device_info(self):
-
-        cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.START_UP_CHECK_STATUS.value]
-        self.blue.ble_send_hearing_aids(cmd)
-        return
-    
-    def turn_off_AFC(self):
-        # NotImplemented
-        # cmd = []
-        # self.blue.ble_send_hearing_aids(cmd)
-        return
-
-    def turn_on_AFC(self):
-        # NotImplemented
-        # cmd = []
-        # self.blue.ble_send_hearing_aids(cmd)
-        return
 
 
-if __name__ == "__main__":
-    cc = HearingAidsLib()
-    cc.connect_hearing_aids("12:34:56:78:A0:B3")
-    cc.log_soc()
-    cc.log_volt()
-    cc.switch_mode("Normal")
-    cc.switch_mode("Innoise")
-    cc.switch_beamforming("On")
+
+# if __name__ == "__main__":
+#     cc = HearingAidsLib()
+#     cc.connect_hearing_aids("12:34:56:78:A0:B3")
+#     cc.log_soc()
+#     cc.log_volt()
+#     cc.switch_mode("Normal")
+#     cc.switch_mode("Innoise")
+#     cc.switch_beamforming("On")

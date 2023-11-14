@@ -94,6 +94,7 @@ class BluetoothLib(object):
 
     def ble_scan_on(self):
         try:
+            # try add a filter, but failed
             #filter = dict()
             #uuids = []
             #ha_uuid = "77425F8F-A696-7968-9038-35E1531ADC77"
@@ -129,13 +130,6 @@ class BluetoothLib(object):
         self.ble_scan_on()
         self.hearing_aids, self.hearing_aids_path = self.connect(addr)
         self.hearing_aids_char_if = self.get_gatt_char(self.hearing_aids_path, "service001a", "char001f")
-        # char_path = f'{self.hearing_aids_path}/service001a/char001f' 
-        # cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        # while not cached:
-        #     print("Discovery service and characteristic")
-        #     time.sleep(1)
-        #     cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        # self.hearing_aids_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
         print("HA Char Interface", self.hearing_aids_char_if)
         self.hearing_aids_addr = addr
         self.ble_scan_off()
