@@ -43,23 +43,12 @@ class BluetoothLib(object):
             print(".", end="")
             time.sleep(0.4)
             cached = len([x for x in self.om_if.GetManagedObjects() if dev_addr in x]) != 0
-            # self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
-            # while not cached:
-            #     print("Press Reset Let Device Discovable!!!")
-            #     time.sleep(1)
-            #     print("founded")
-            #     cached = True 
-            # self.adapter_obj.StopDiscovery(dbus_interface="org.bluez.Adapter1")
+
+        # for i in self.om_if.GetManagedObjects():
+        #     print(type(i), i)
         Console("Get Connection State")
         dev_obj = self.bus.get_object("org.bluez", dev_path)
         dev_prop = dbus.Interface(dev_obj, "org.freedesktop.DBus.Properties")
-        dev_connected = dev_prop.Get("org.bluez.Device1", "Connected")
-        if dev_connected == dbus.Boolean(0):
-            print("do connecting...")
-            dev_obj.Connect(dbus_interface="org.bluez.Device1")
-
-        # print some info 
-        dev_if = dbus.Interface(self.bus.get_object("org.bluez", dev_path), "org.bluez.Device1")
         dev_name = dev_prop.Get("org.bluez.Device1", "Name") 
         dev_addr = dev_prop.Get("org.bluez.Device1", "Address")
         dev_paired = dev_prop.Get("org.bluez.Device1", "Paired")
@@ -70,6 +59,12 @@ class BluetoothLib(object):
         print("Address: ", dev_addr)
         print("Paired: ", dev_paired)
         print("Connected: ", dev_connected)
+        if dev_connected == dbus.Boolean(0):
+            print("do connecting...")
+            dev_obj.Connect(dbus_interface="org.bluez.Device1")
+
+        # print some info 
+        dev_if = dbus.Interface(self.bus.get_object("org.bluez", dev_path), "org.bluez.Device1")
 
         return (dev_obj, dev_path)
     
@@ -99,6 +94,16 @@ class BluetoothLib(object):
 
     def ble_scan_on(self):
         try:
+            # try add a filter, but failed
+            #filter = dict()
+            #uuids = []
+            #ha_uuid = "77425F8F-A696-7968-9038-35E1531ADC77"
+            #cc_uuid = "12121212-1212-1212-1212-121212121212"
+            #uuids.append(dbus.String(ha_uuid))
+            #uuids.append(dbus.String(cc_uuid))
+            #filter.update({"UUIDs" :  uuids})
+            #self.adapter_obj.SetDiscoveryFilter(filter, dbus_interface="org.bluez.Adapter1")
+            #print(self.adapter_obj.GetDiscoveryFilters(dbus_interface="org.bluez.Adapter1"))
             self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
         except:
             raise Exception("scan on failed")
@@ -114,14 +119,6 @@ class BluetoothLib(object):
         self.ble_scan_on()
         self.case, self.case_path = self.connect(addr)
         self.case_char_if = self.get_gatt_char(self.case_path, "service0019", "char001a")
-        # char_path = f'{self.case_path}/service0019/char001a'
-        # print("Blue Discovering Char...")
-        # cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        # while not cached:
-        #     print("Discovering service and characteristic...")
-        #     time.sleep(1)
-        #     cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        # self.case_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
         print("Case Char Interface", self.case_char_if)
         self.case_addr = addr
         self.ble_scan_off()
@@ -133,13 +130,6 @@ class BluetoothLib(object):
         self.ble_scan_on()
         self.hearing_aids, self.hearing_aids_path = self.connect(addr)
         self.hearing_aids_char_if = self.get_gatt_char(self.hearing_aids_path, "service001a", "char001f")
-        # char_path = f'{self.hearing_aids_path}/service001a/char001f' 
-        # cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        # while not cached:
-        #     print("Discovery service and characteristic")
-        #     time.sleep(1)
-        #     cached = len([x for x in self.om_if.GetManagedObjects() if char_path in x]) != 0
-        # self.hearing_aids_char_if = dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
         print("HA Char Interface", self.hearing_aids_char_if)
         self.hearing_aids_addr = addr
         self.ble_scan_off()
@@ -246,13 +236,7 @@ class BluetoothLib(object):
 # if __name__ == "__main__":
 #     ble = BluetoothLib()
 #     ble.ble_connect_hearing_aids("12:34:56:78:A0:B3")
-#     ble.ble_connect_case()
-#     header = [9]
-#     cmd = [0,11]
-#     desc = [0,0]
-#     param = [1] 
-#     ble.ble_hearing_aids_connected("12:34:56:78:A0:B3")
+#     print(ble.ble_hearing_aids_connected("12:34:56:78:A0:B3"))
 #
 #     ble.ble_disconnect_hearing_aids()
-#     ble.ble_disconnect_case()
 

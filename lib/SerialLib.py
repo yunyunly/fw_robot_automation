@@ -382,6 +382,11 @@ class SerialLib(object):
             results[parallel_idx] = ret
 
     def serial_parallel_read_until(self, kind, exp, timeout=None):
+        """Register a read event 
+
+        Examples:
+        |Serial Parallel Read Until| Case | say hello | timeout=${3}|
+        """
         match kind:
             case "Case":
                 new_thread = threading.Thread(target = self.serial_read_until, args = (kind, exp, timeout, self.case_thread_count))
@@ -402,6 +407,11 @@ class SerialLib(object):
                 raise Exception("Invalid kind")
     
     def serial_parallel_read_until_regex(self, kind, patt, timeout=None):
+        """Register a read event 
+
+        Examples:
+        |Serial Parallel Read Until Regex| Case | say ([a-zA-Z]+) | timeout=${3}|
+        """
         match kind:
             case "Case":
                 new_thread = threading.Thread(target = self.serial_read_until_regex, args = (kind, patt, timeout, self.case_thread_count))
@@ -422,6 +432,11 @@ class SerialLib(object):
                 raise Exception("Invalid kind")
 
     def serial_parallel_wait(self, kind_list):
+        """Execute all read event in parallel and wait complete 
+
+        Examples:
+        |${ret}=|Serial Parallel Wait| Case Left Right|
+        """
         total = []
         if "Case" in kind_list:
             total += self.case_threads
@@ -454,14 +469,12 @@ class SerialLib(object):
 
 
 
-if __name__ == "__main__":
-    sl = SerialLib()
-    sl.serial_open_port("Case", "/dev/ttyACM0", 115200)
-    sl.serial_open_port("Left", "/dev/ttyUSB0", 1152000)
-    for i in range(100):
-        #print(case.serial_read_blocking())
-        print(sl.serial_read_blocking("Case"))
-        print(sl.serial_read_blocking("Left"))
-
-    sl.release()
-    # # results = await asyncio.gather(*tasks)
+# if __name__ == "__main__":
+#     sl = SerialLib()
+#     sl.serial_open_port("Case", "/dev/ttyACM0", 115200)
+#     sl.serial_open_port("Left", "/dev/ttyUSB0", 1152000)
+#     for i in range(100):
+#         print(sl.serial_read_blocking("Case"))
+#         print(sl.serial_read_blocking("Left"))
+#
+#     sl.release()

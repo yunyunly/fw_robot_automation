@@ -378,9 +378,9 @@ class ChargingCaseLib:
         return 
 
 
-
-if __name__ == "__main__":
-    cc = ChargingCaseLib()
-    cc.connect_charging_case()
-    cc.case_open()
+#
+# if __name__ == "__main__":
+#     cc = ChargingCaseLib()
+#     cc.connect_charging_case()
+#     cc.case_open()
 
