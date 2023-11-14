@@ -44,8 +44,8 @@ class BluetoothLib(object):
             time.sleep(0.4)
             cached = len([x for x in self.om_if.GetManagedObjects() if dev_addr in x]) != 0
 
-        for i in self.om_if.GetManagedObjects():
-            print(type(i), i)
+        # for i in self.om_if.GetManagedObjects():
+        #     print(type(i), i)
         Console("Get Connection State")
         dev_obj = self.bus.get_object("org.bluez", dev_path)
         dev_prop = dbus.Interface(dev_obj, "org.freedesktop.DBus.Properties")
