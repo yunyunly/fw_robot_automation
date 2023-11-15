@@ -32,7 +32,7 @@ class ChargingCaseLib:
         """Let charging case Reset to refresh state.
         
         Examples:
-        |Reset|
+        | Reset |
         """
         cmd = [(ROBOTC.RESET.value >> 8) & 0xff, ROBOTC.RESET.value & 0xff]
         desc = [0,0]
@@ -45,7 +45,7 @@ class ChargingCaseLib:
         """Connect To charging case before you send any message to it.  
         
         Examples:
-        |Connect Charging Case| D0:14:11:20:20:18|
+        | Connect Charging Case | D0:14:11:20:20:18 |
         """
         Logger.info("Call Blue Connect Case")
         self.blue.ble_connect_case(addr)
@@ -55,7 +55,7 @@ class ChargingCaseLib:
         """Disconnect charging case.  
         
         Examples:
-        |Disconnect Charging Case|
+        | Disconnect Charging Case |
         """
         print("Call Blue Disconnect Case")
         self.blue.ble_connect_case() 
@@ -65,7 +65,7 @@ class ChargingCaseLib:
         
         No return, should handle the result via parsing serial port
         Examples:
-        |Print Info|
+        | Print Info |
         """
         cmd = [(ROBOTC.PRINT_INFO.value >> 8) & 0xff, ROBOTC.PRINT_INFO.value & 0xff]
         desc = [0, 0]
@@ -76,7 +76,7 @@ class ChargingCaseLib:
         """Let charging case call plug in handler  
 
         Examples:
-        |Plug In|
+        | Plug In |
         """
         cmd = [(ROBOTC.PLUG_IN.value >> 8) & 0xff, ROBOTC.PLUG_IN.value & 0xff]
         desc = [0, 0]
@@ -87,7 +87,7 @@ class ChargingCaseLib:
         """Let charging case call plug out handler  
 
         Examples:
-        |Plug Out|
+        | Plug Out |
         """
         cmd = [(ROBOTC.PLUG_OUT.value >> 8) & 0xff, ROBOTC.PLUG_OUT.value & 0xff]
         desc = [0, 0]
@@ -98,7 +98,7 @@ class ChargingCaseLib:
         """Let charging case call case open handler  
  
         Examples:
-        |Case Open|
+        | Case Open |
         """        
         value = ROBOTC.CASE_OPEN.value 
         cmd = [(value >> 8) & 0xff, value & 0xff]
@@ -110,7 +110,7 @@ class ChargingCaseLib:
         """Let charging case call case close handler 
 
         Examples:
-        |Case Close|
+        | Case Close |
         """        
         value = ROBOTC.CASE_CLOSE.value 
         cmd = [(value >> 8) & 0xff, value & 0xff]
@@ -122,9 +122,9 @@ class ChargingCaseLib:
         """Let charging case call dock hearing aids handler
 
         Examples:
-        |Dock|Left|
-        |Dock|Right|
-        |Dock|Both|
+        | Dock | Left |
+        | Dock | Right |
+        | Dock | Both |
         """
         value = ROBOTC.DOCK.value 
         param = []
@@ -145,9 +145,9 @@ class ChargingCaseLib:
         """Let charging case call undock hearing aids handler
 
         Examples:
-        |Undock|Left|
-        |Undock|Right|
-        |Undock|Both|
+        | Undock | Left |
+        | Undock | Right |
+        | Undock | Both | 
         """        
         value = ROBOTC.UNDOCK.value
         param = []
@@ -168,12 +168,12 @@ class ChargingCaseLib:
         """Let charging case call button press handler
         
         Examples:
-        |Press Button| Fn |
-        |Press Button| Fn | Long|
-        |Press Button| Left |
-        |Press Button| Right |
-        |Press Button| Reset |
-        |Press Button| Reset | Long |
+        | Press Button | Fn |
+        | Press Button | Fn | Long |
+        | Press Button | Left |
+        | Press Button | Right |
+        | Press Button | Reset |
+        | Press Button | Reset | Long |
         """
         value = ROBOTC.PRESS_BUTTON.value 
         param = []
@@ -200,9 +200,9 @@ class ChargingCaseLib:
         """Let charging case request hearing aids' soc 
 
         Examples:
-        |Request Hearing Aids Soc| Left |
-        |Request Hearing Aids Soc| Right |
-        |Request Hearing Aids Soc| Both |
+        | Request Hearing Aids Soc | Left |
+        | Request Hearing Aids Soc | Right |
+        | Request Hearing Aids Soc | Both |
         """        
         value = ROBOTC.REQUEST_BATTERY.value 
         param = []
@@ -223,9 +223,9 @@ class ChargingCaseLib:
         """Let charging case generate a pulse sequence
 
         Exampls:
-        |Generate Pulse| Left |
-        |Generate Pulse| Right |
-        |Generate Pulse| Both |
+        | Generate Pulse | Left |
+        | Generate Pulse | Right |
+        | Generate Pulse | Both |
         """
         value = ROBOTC.GEN_PULSE.value
         param = []
@@ -247,9 +247,9 @@ class ChargingCaseLib:
         
         Examples:
 
-        |Charge Hearing Aids| Left |
-        |Charge Hearing Aids| Right|
-        |Charge Hearing Aids| Both |
+        | Charge Hearing Aids | Left |
+        | Charge Hearing Aids | Right |
+        | Charge Hearing Aids | Both |
         """
         value = ROBOTC.CHARGE_HEARING_AIDS.value
         param = []
@@ -271,9 +271,9 @@ class ChargingCaseLib:
 
         Examples:
 
-        |Charge Hearing Aids Stop| Left |
-        |Charge Hearing Aids Stop| Right |
-        |Charge Hearing Aids Stop| Both |
+        | Charge Hearing Aids Stop | Left |
+        | Charge Hearing Aids Stop | Right |
+        | Charge Hearing Aids Stop | Both |
         """        
         value = ROBOTC.CHARGE_HEARING_AIDS_STOP.value
         param = []
@@ -294,7 +294,7 @@ class ChargingCaseLib:
         """Let charging case call connecting handler
 
         Examples:
-        |Case Connect Hearing Aids|
+        | Case Connect Hearing Aids |
         """ 
         value = ROBOTC.CONNECT_HEARING_AIDS.value 
         cmd = [(value >> 8) & 0xff, value & 0xff]
@@ -307,7 +307,7 @@ class ChargingCaseLib:
         """Let charging case call disconnecing handler
 
         Examples:
-        |Case Disconnect Hearing Aids|
+        | Case Disconnect Hearing Aids |
         """ 
         value = ROBOTC.DISCONNECT_HEARING_AIDS.value 
         cmd = [(value >> 8) & 0xff, value & 0xff]
@@ -320,9 +320,9 @@ class ChargingCaseLib:
         """Let charging case send given message to hearing aids via single wire
         
         Examples:
-        |Single Wire Send| Left | 01ff00 |
-        |Single Wire Send| Right | 01ffff |
-        |Single Wire Send| Both | 01ff06010203040506 |
+        | Single Wire Send | Left | 01ff00 |
+        | Single Wire Send | Right | 01ffff |
+        | Single Wire Send | Both | 01ff06010203040506 |
         """
         value = ROBOTC.SINGLE_WIRE_SND.value 
         param = []
@@ -350,9 +350,9 @@ class ChargingCaseLib:
         """Let charging case send given message to hearing aids and wait for response via single wire
         
         Examples:
-        |Single Wire Request| Left | 01ff00 |
-        |Single Wire Request| Right | 01ffff |
-        |Single Wire Request| Both | 01ff06010203040506 |
+        | Single Wire Request | Left | 01ff00 |
+        | Single Wire Request | Right | 01ffff |
+        | Single Wire Request | Both | 01ff06010203040506 |
         """
         value = ROBOTC.SINGLE_WIRE_REQ.value 
         param = []

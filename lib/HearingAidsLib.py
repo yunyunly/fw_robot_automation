@@ -29,9 +29,11 @@ def u16ToField(x:int) -> list:
 
 __version__ = "0.1"
 class HearingAidsLib:
-    """Library for control HA
+    """Library for control hearing aids.
 
-       Most operations are implemented as sending ble message to HA  
+       Most operations are implemented as sending ble message to hearing aids.  
+
+       The implementations of hearing aids callback are structed in BLE handler function, you can find whether a API's callback exist. 
     """
     ROBOT_LIBRARY_SCOPE = "SUITE"
 
@@ -44,7 +46,7 @@ class HearingAidsLib:
         """Connect To hearing aid before you send any message to it.  
         
         Examples:
-        |Connect Hearing Aid| D0:14:11:20:20:18|
+        | Connect Hearing Aid | D0:14:11:20:20:18 |
         """
         Logger.info("Call Blue Connect HA")
         self.blue.ble_connect_hearing_aids(addr)
@@ -54,7 +56,7 @@ class HearingAidsLib:
         """Disconnect To hearing aid before you send any message to it.  
         
         Examples:
-        |Disconnect Hearing Aid| D0:14:11:20:20:18|
+        | Disconnect Hearing Aid | D0:14:11:20:20:18 |
         """
         Logger.info("Call Blue Disconnect HA")
         self.blue.ble_disconnect_hearing_aids(addr)
@@ -64,7 +66,7 @@ class HearingAidsLib:
         """Return True if hearing aids connected via bluetooth, otherwise False
 
         Examples:
-        |${ret}=    | Hearing Aids Connected |
+        | ${ret}=    | Hearing Aids Connected |
         """
         return self.blue.ble_hearing_aids_connected(addr)
     
@@ -72,7 +74,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows innoise state 
 
         Examples:
-        |Log Innoise State|
+        | Log Innoise State |
         """
         head = u16ToField(ROBOTE.LOG_INNOISE_STATE.value)
         cmd = head + [0,0]
@@ -82,7 +84,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows beamforming state
 
         Examples:
-        |Log Bf State|
+        | Log Bf State |
         """
         head = u16ToField(ROBOTE.LOG_BF_STATE.value)
         cmd = head + [0,0]
@@ -92,7 +94,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows volume
 
         Examples:
-        |Log Volume|
+        | Log Volume |
         """
         head = u16ToField(ROBOTE.LOG_VOLUME.value)
         cmd = head + [0,0]
@@ -102,7 +104,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows wear on/wear off state
 
         Examples:
-        |Log Wear State|
+        | Log Wear State |
         """
         head = u16ToField(ROBOTE.LOG_WEAR_STATE.value)
         cmd = head + [0,0]
@@ -112,7 +114,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows a2dp state
 
         Examples:
-        |Log A2dp State|
+        | Log A2dp State |
         """
         head = u16ToField(ROBOTE.LOG_A2DP_STATE.value)
         cmd = head + [0,0]
@@ -122,7 +124,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows hfp state
 
         Examples:
-        |Log Hfp State|
+        | Log Hfp State |
         """
         head = u16ToField(ROBOTE.LOG_HFP_STATE.value)
         cmd = head + [0,0]
@@ -132,7 +134,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows tws state (whether two hearing aids are connected?)
 
         Examples:
-        |Log Tws State|
+        | Log Tws State |
         """
         head = u16ToField(ROBOTE.LOG_TWS_STATE.value)
         cmd = head + [0,0]
@@ -142,7 +144,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows battery voltage 
 
         Examples:
-        |Log Volt|
+        | Log Volt |
         """
         head = u16ToField(ROBOTE.LOG_VOLT.value)
         cmd = head + [0,0]
@@ -152,7 +154,7 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows soc 
 
         Examples:
-        |Log Soc|
+        | Log Soc |
         """
         head = u16ToField(ROBOTE.LOG_SOC.value)
         cmd = head + [0,0]
@@ -162,8 +164,8 @@ class HearingAidsLib:
         """Let hearing aids print a log that shows mcu frequency
 
         Examples:
-        |Log Mcu Freq| M55 |
-        |Log Mcu Freq| M33 |
+        | Log Mcu Freq | M55 |
+        | Log Mcu Freq | M33 |
         """
         head = u16ToField(ROBOTE.LOG_MCU_FREQ.value)
         content: list
@@ -181,9 +183,9 @@ class HearingAidsLib:
         """Let hearing aids somulate a wear on
 
         Examples:
-        |Wear On| Left |
-        |Wear On| Right |
-        |Wear On| Both |
+        | Wear On | Left |
+        | Wear On | Right |
+        | Wear On | Both |
         """
         head = u16ToField(ROBOTE.WEAR_ON.value)
         content:list
@@ -203,7 +205,7 @@ class HearingAidsLib:
         """Let hearing aids simulate a wear off 
 
         Examples:
-        |Wear Off| Left |
+        | Wear Off | Left |
         | Wear Off | Right |
         | Wear Off | Both |
         """
@@ -225,8 +227,8 @@ class HearingAidsLib:
         """Let hearing aids simulate a double tap 
 
         Examples:
-        |Double Tap | Left |
-        |Double Tap | Right |
+        | Double Tap | Left |
+        | Double Tap | Right |
         | Double Tap | Both |
         """
         head = u16ToField(ROBOTE.DOUBLE_TAP.value)
@@ -247,9 +249,9 @@ class HearingAidsLib:
         """Let hearing aids reset
 
         Examples:
-        |Reset | Left |
-        |Reset | Right |
-        |Reset | Both |
+        | Reset | Left |
+        | Reset | Right |
+        | Reset | Both |
         """
         head = u16ToField(ROBOTE.RESET.value)
         content:list
@@ -269,9 +271,9 @@ class HearingAidsLib:
         """Let hearing aids power off
 
         Examples:
-        |Power Off | Left |
-        |Power Off | Right | 
-        |Power Off | Both |
+        | Power Off | Left |
+        | Power Off | Right | 
+        | Power Off | Both |
         """
         head = u16ToField(ROBOTE.POWER_OFF.value)
         content:list
@@ -291,11 +293,11 @@ class HearingAidsLib:
         """Let hearing aids switch to a given mode
 
         Examples:
-        | Switch Mode | Normal |
-        | Switch Mode | Innoise | 
-        | Switch Mode | Remote Fitting |
-        | Switch Mode | ANSI |
-        | Switch Mode | Hearing Test |
+        |  Switch Mode | Normal |
+        |  Switch Mode | Innoise | 
+        |  Switch Mode | Remote Fitting |
+        |  Switch Mode | ANSI |
+        |  Switch Mode | Hearing Test |
         """
         head = u16ToField(ROBOTE.SWITCH_DEVICE_MODE.value)
         content:list 
@@ -320,8 +322,8 @@ class HearingAidsLib:
         """Let hearing aids turn on/turn off beamforming
 
         Examples:
-        | Switch Beamforming | On |
-        | Switch Beamforming | Off | 
+        |  Switch Beamforming | On |
+        |  Switch Beamforming | Off | 
         """
         head = u16ToField(ROBOTE.SWITCH_BEAMFORMING.value)
         content:list 
@@ -341,8 +343,8 @@ class HearingAidsLib:
         Let hearing aids turn on/turn off AFC
 
         Examples:
-        | Switch Beamforming | On |
-        | Switch Beamforming | Off | 
+        |  Switch Beamforming | On |
+        |  Switch Beamforming | Off | 
         """
         head = u16ToField(ROBOTE.SWITCH_BEAMFORMING.value)
         content:list 

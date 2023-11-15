@@ -26,7 +26,7 @@ class AudioLib(object):
         """ Check and update bluetooth sound card information
             
         Examples:
-        |Audio Get Dev Id|
+         |  Audio Get Dev Id |
         """
         output = ""
         self.id_list = []
@@ -48,7 +48,7 @@ class AudioLib(object):
         """ Set current bluetooth sound card use profile A2DP 
         
         Examples:
-        |Audio Use A2DP|
+         | Audio Use A2DP |
         """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
@@ -63,7 +63,7 @@ class AudioLib(object):
         """ Set current bluetooth sound card use profile HFP 
         
         Examples:
-        |Audio Use HFP|
+         | Audio Use HFP |
         """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
@@ -76,8 +76,8 @@ class AudioLib(object):
 
     def audio_play_simple_audio(self, timeout=None):
         """Examples:
-        |Audio Play Simple Audio|
-        |${ret}= | Audio Play Simple Audio|
+         | Audio Play Simple Audio |
+         | ${ret}= | Audio Play Simple Audio |
         """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
@@ -85,8 +85,8 @@ class AudioLib(object):
 
     def audio_play_audio(self, filepath:str, timeout=None):
         """Examples:
-        |Audio Play Audio|
-        |${ret}=    |Audio Play Audio
+         | Audio Play Audio |
+         | ${ret}=    | Audio Play Audio |
         """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")

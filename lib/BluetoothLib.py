@@ -8,9 +8,9 @@ Debug = robot.api.logger.debug
 Info = robot.api.logger.info 
     
 class BluetoothLib(object):
-    """This class is the underlying impl for charging case and hearing aids libraries.
+    """This class is the underlying impl for charging case and hearing aids bluetooth related libraries.
 
-    Do not suggest you use its any API in test cases.
+    Do not suggest you use its any API in test cases, you should use HearingAidsLib or ChargingCaseLib.
     """
     charging_case_header = 9
     hci_id = 0
@@ -32,7 +32,7 @@ class BluetoothLib(object):
         """Connect Device via BLE
         
         Examples:
-        |Connect| D0:11:22:33:44:55 |
+        | Connect | D0:11:22:33:44:55 |
         """
         dev_addr = addr.replace(":", "_")
         dev_path = f'/org/bluez/hci{self.hci_id}/dev_{dev_addr}'
@@ -78,6 +78,7 @@ class BluetoothLib(object):
     
     def read(self, iface):
         """Read properties, not recieving
+        
         You should not use it in test cases 
         """
         return iface.ReadValue("")
@@ -136,7 +137,7 @@ class BluetoothLib(object):
         return 
     
     def ble_disconnect_case(self, dev_addr=None):
-        """Not implemented yet"""
+        """Disconnect from charging case"""
         if dev_addr is None:
             dev_addr = self.case_addr
         device_path = f"/org/bluez/hci{self.hci_id}/dev_" + dev_addr.replace(":", "_")
@@ -150,6 +151,7 @@ class BluetoothLib(object):
         return ret  
     
     def ble_disconnect_hearing_aids(self, dev_addr=None):
+        """Disconnect from hearing aids"""
         if dev_addr is None:
             dev_addr = self.hearing_aids_addr
         device_path = f"/org/bluez/hci{self.hci_id}/dev_" + dev_addr.replace(":", "_")
@@ -194,7 +196,7 @@ class BluetoothLib(object):
             return False
     
     def ble_pair(self, dev_addr=None):
-        """Not work well"""
+        """Not Implemented Yet"""
         if dev_addr is None:
             dev_addr = self.hearing_aids_addr 
         dev_path = f"/org/bluez/hci{self.hci_id}/dev_" + dev_addr.replace(":", "_")
@@ -218,7 +220,7 @@ class BluetoothLib(object):
         return ret 
 
     def ble_unpair(self, dev_addr=None):
-        """Not work well"""
+        """Not Implemented Yet"""
         if dev_addr is None:
             dev_path = self.hearing_aids_addr
         else:
