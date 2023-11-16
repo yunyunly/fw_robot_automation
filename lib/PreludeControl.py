@@ -97,17 +97,3 @@ if __name__ == "__main__":
     time.sleep(0.1)
     prelude.reset("off", "lr")
     prelude.close_ftdi()
-    
-
-# Assuming you have the necessary definitions for Ftdi class methods,
-# you can use the class as follows:
-
-# gpio_setter = GPIO_SetDxConfig()
-# gpio_setter.set_dx_config(gpio_setter.DEVICE1PID, 0x04, 1)
-
-# Assuming you have the necessary definitions for FT_OpenEx, FT_Close, FT_SetUSBParameters,
-# FT_SetChars, FT_SetTimeouts, FT_SetLatencyTimer, FT_SetFlowControl, FT_SetBaudRate,
-# FT_SetBitMode, FT_Read, and FT_Write, you can use the class as follows:
-
-# gpio_setter = GPIO_SetDxConfig()
-# gpio_setter.set_dx_config(gpio_setter.DEVICE1PID, 0x04, 1)
