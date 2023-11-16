@@ -2,7 +2,7 @@ import time
 from pyftdi.ftdi import Ftdi
 
 
-class PreludeControl:
+class PreludeControlLib:
     def __init__(self):
         self.RESET1 = 0x01
         self.RESET2 = 0x02
@@ -20,6 +20,11 @@ class PreludeControl:
         self.ft_handle.set_flowctrl("")
         self.ft_handle.set_baudrate(62500)
         self.__communicate_ftdi(0xff, 0)
+    
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(PreludeControlLib, cls).__new__(cls)
+        return cls.instance
     
     def __communicate_ftdi(self, gpio, state):
         w_data_len = 7
