@@ -20,27 +20,35 @@
     "Not Implemented Yet": "0xff"
   },
   "robote": {
-    "Print Info": "0x00",
-    "Plug In" : "0x01",
-    "Plug Out" : "0x02",
-    "Case Open": "0x03",
-    "Case Close": "0x04",
-    "Dock Left": "0x05",
-    "Dock Right": "0x06",
-    "Dock Both" : "0x07",
-    "Undock Left": "0x08",
-    "Undock Right": "0x09",
-    "Undock Both": "0x0a",
-    "Press Fn": "0x0b",
-    "Press Left": "0x0c",
-    "Press Right": "0x0d",
-    "Press Reset": "0x0e",
-    "Press Fn Long": "0x0f",
-    "Press Reset Long": "0x10",
-    "Request Battery Left": "0x11",
-    "Request Battery Right": "0x12",
-    "Connect Hearing Aids": "0x13",
-    "Disconnect Hearing Aids": "0x14"
+    "Log Innoise State": "0xff01",
+    "Log Bf State":"0xfe02",
+    "Log Volume":"0xfe03",
+    "Log Wear State": "0xfe04",
+    "Log A2dp State": "0xfe05",
+    "Log Hfp State":"0xfe06",
+    "Log Tws State": "0xfe07",
+    "Log Volt": "0xfe08",
+    "Log Soc": "0xfe09",
+    "Log Mcu Freq": "0xfe0a",
+    "Wear On": "0xfe0b",
+    "Wear Off":"0xfe0c",
+    "Double Tap": "0xfe0d",
+    "Reset": "0xfe0e",
+    "Power Off": "0xfe0f",
+    "Switch Device Mode": "0x0301",
+    "Switch Beamforming": "0x0302",
+    "Set Device Mode": "0x0201",
+    "Set Volume":"0x0202",
+    "Set Remote Fitting Mode":"0x0203",
+    "Set Tone":"0x0204",
+    "Get Env Noise":"0x0205",
+    "Set Device Lock": "0x0206",
+    "Set Prompt Volume": "0x0207",
+    "Hearing Profile": "0x0303",
+    "Switch Ansi Mode": "0x0306",
+    "Button Fn Press": "0x0501",
+    "Button Left Press": "0x0502",
+    "Button Right Press": "0x0503"
   },
   "side": {
     "Left":"0x01",
@@ -54,5 +62,68 @@
     "Rst Long": "0x04",
     "Left": "0x05",
     "Right": "0x06"
+  },
+  "chip": {
+    "M55": "0x00",
+    "M33": "0x01"
+  },
+  "mode0": {
+    "Normal": "0x00",
+    "Innoise": "0x01",
+    "Remote Fitting": "0x02",
+    "ANSI":"0x03",
+    "Hearing Test": "0x04"
+  },
+  "cmd_tpye": {
+    "Status Check": "0x01",
+    "App Control": "0x02",
+    "Audio Chain": "0x03",
+    "Case Related With App": "0x04",
+    "Echo Control": "0x05"
+  },
+  "check": {
+    "check general status": "0x01",
+    "start up check status": "0x02",
+    "app background mode check status": "0x03",
+    "app send logs acknowledge": "0x04",
+    "app userstats mode check status": "0x05",
+    "app send userstats acknowledge": "0x06",
+    "app fetch bt device info": "0x07",
+    "ha send double tap notification": "0x08",
+    "check hardware version": "0x09"
+  },
+  "control": {
+    "switch device mode": "0x01",
+    "set volume": "0x02",
+    "set remote fitting mode": "0x03",
+    "set tone": "0x04",
+    "get latest noise": "0x05",
+    "lock device": "0x06",
+    "set prompt volume": "0x07",
+    "set batt saving automatic": "0x08",
+    "get ltk data": "0x09",
+    "set updated pmu time": "0x0a"
+  },
+  "audio": {
+    "switch running mode": "0x01",
+    "set beamforming onoff": "0x02",
+    "update hearing profile": "0x03",
+    "send config to fw": "0x04",
+    "send test config in remote fiting": "0x05",
+    "switch ansi setting": "0x06",
+    "finetune ansi rts gain": "0x07"
+  },
+  "case_related_with_app": {
+    "case startup info to app": "0x01",
+    "case func button pressed to app": "0x02",
+    "case long bar l pressed to app": "0x03",
+    "case long bar r pressed to app": "0x04"
+  },
+  "echo_control": {
+    "case send startup info": "0x01",
+    "case func button pressed": "0x02",
+    "case long bar l pressed": "0x03",
+    "case long bar r pressed": "0x04",
+    "case pairing completed": "0x05"
   }
 }
