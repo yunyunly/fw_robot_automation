@@ -1,5 +1,6 @@
-from pyftdi.ftdi import Ftdi
 import time
+from pyftdi.ftdi import Ftdi
+
 
 class PreludeControl:
     def __init__(self):
@@ -9,7 +10,6 @@ class PreludeControl:
         self.VCHARGER2 = 0x08
         self.POW1 = 0x10
         self.POW2 = 0x20
-        Ftdi.show_devices()
         self.ft_handle = Ftdi()
         self.ft_handle.open_bitbang_from_url("ftdi://ftdi:4232:FT66ORKA/1")
         self.ft_handle.set_bitmode(0xFF, Ftdi.BitMode.BITBANG)
@@ -19,9 +19,9 @@ class PreludeControl:
         self.ft_handle.set_latency_timer(16)
         self.ft_handle.set_flowctrl("")
         self.ft_handle.set_baudrate(62500)
-        self.communicate_ftdi(0xff, 0)
+        self.__communicate_ftdi(0xff, 0)
     
-    def communicate_ftdi(self, gpio, state):
+    def __communicate_ftdi(self, gpio, state):
         w_data_len = 7
         data_out = bytearray([0] * w_data_len)
         data_read = bytearray([0] * w_data_len)
@@ -39,34 +39,65 @@ class PreludeControl:
 
         return True
     
-    def charge(self, enable):
-        if enable:
-            self.communicate_ftdi(self.VCHARGER1|self.VCHARGER2, 1)
+    def charge(self, enable:str="on", device:str="lr"):
+        device_pin = 0x00
+        enable = enable.lower()
+        device = device.lower()
+        
+        if "l" not in device and "r" not in device:
+            raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
+        
+        if "l" in device:
+            device_pin |= self.VCHARGER1
+        if "r" in device:
+            device_pin |= self.VCHARGER2
+    
+        if enable == "on" or enable == "true":
+            self.__communicate_ftdi(device_pin, 1)
+        elif enable == "off" or enable == "false":
+            self.__communicate_ftdi(device_pin, 0)
         else:
-            self.communicate_ftdi(self.VCHARGER1|self.VCHARGER2, 0)
+            raise ValueError("Only 'ON' or 'OFF' is accepted.")
 
-    def reset(self, enable):
-        if enable:
-            self.communicate_ftdi(self.RESET1|self.RESET2, 1)
-        else:
-            self.communicate_ftdi(self.RESET1|self.RESET2, 0)
+    def reset(self, enable:str="on", device:str="lr"):
+        device_pin = 0x00
+        enable = enable.lower()
+        device = device.lower()
+        
+        if "l" not in device and "r" not in device:
+            raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
+        
+        if "l" in device:
+            device_pin |= self.RESET1
+        if "r" in device:
+            device_pin |= self.RESET2
             
-    def close_ftdi(self):
-        self.ft_handle.close(freeze=True)
+        if enable == "on" or enable == "true":
+            self.__communicate_ftdi(device_pin, 1)
+        elif enable == "off" or enable == "false":
+            self.__communicate_ftdi(device_pin, 0)
+        else:
+            raise ValueError("Only 'ON' or 'OFF' is accepted.")
+            
+    def close_ftdi(self, freeze:str="on"):
+        freeze = freeze.lower()
+        if freeze == "on" or freeze == "true":
+            freeze = True
+        self.ft_handle.close(freeze=freeze)
 
 
 if __name__ == "__main__":
     prelude = PreludeControl()
-    print("prelude inited.")
-    time.sleep(0.5)
-    prelude.reset(1)
-    time.sleep(0.5)
-    prelude.reset(0)
-    time.sleep(0.5)
-    prelude.reset(1)
-    time.sleep(0.5)
-    prelude.reset(0)
+    Ftdi.show_devices()
+    prelude.charge("off", "lr")
+    time.sleep(0.1)
+    prelude.charge("on", "lr")
+    time.sleep(1)
+    prelude.charge("on", "lr")
+    time.sleep(0.1)
+    prelude.reset("off", "lr")
     prelude.close_ftdi()
+    
 
 # Assuming you have the necessary definitions for Ftdi class methods,
 # you can use the class as follows:
