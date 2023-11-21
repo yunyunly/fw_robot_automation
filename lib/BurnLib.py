@@ -3,6 +3,7 @@ import time
 import subprocess
 import PreludeControlLib
 import robot.api.logger
+import select
 import fcntl
 
 Console = robot.api.logger.console 
@@ -17,21 +18,15 @@ class BurnLib:
             self.burn_tool_path = burn_tool_path
         else:
             self.burn_tool_path = os.path.join("/home/km4sh/dev/infra/tools/dldtool-ubuntu-v1.4")
-        self.prelude = PreludeControlLib.PreludeControlLib()
+        try:
+            self.prelude = PreludeControlLib.PreludeControlLib()
+        except PreludeControlLib.UsbToolsError:
+            raise RuntimeError("PreludeControlLib init failed.")
         
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(BurnLib, cls).__new__(cls)
         return cls.instance
-    
-    def __non_blocking_read(self, output):
-        fd = output.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        try:
-            return output.read()
-        except:
-            return ""
 
     def burn(
         self,
@@ -51,19 +46,20 @@ class BurnLib:
         _burn_command.append(f"{os.path.join(self.burn_tool_path, filename)}")
         _burn_command.append(f"{os.path.join(self.burn_tool_path, bootloader)}")
         burn_device_a = subprocess.Popen(_burn_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         self.prelude.charge("on")
         time.sleep(1)
         self.prelude.reset("on")
         time.sleep(0.1)
         self.prelude.reset("off")
         
-        # wait burning process, and check if finished
         while True:
-            ret = burn_device_a.poll()
-            if ret is not None:
-                Console(f"Return Value: {ret}")
+            return_code = burn_device_a.poll()
+            if return_code is not None:
                 break
-            time.sleep(0.1)
-
+        
         self.burning = False
-        return True
+        if return_code != 0:
+            raise RuntimeError(f"Burn failed. Return Code: {return_code}")
+            return return_code
+        return 0

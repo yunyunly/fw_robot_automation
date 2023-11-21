@@ -1,5 +1,6 @@
 import time
 from pyftdi.ftdi import Ftdi
+from pyftdi.usbtools import UsbToolsError
 import robot.api.logger 
 
 Console = robot.api.logger.console 
