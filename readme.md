@@ -22,16 +22,17 @@
 `robot --test "name of the test case" xyz.robot`
 
 ## Add a Library 
-you can do it 
+Add a file `XyzLib.py` in `lib/` folder, define the same name class `XyzLib` in it. 
 
 ## Add a API 
-you can do it 
+In `XyzLib` class, define a function `abc_def_g()` automaticly link to a keyword `Abc_Def_G()`. 
 
 ## Add a Keyword 
-you can do it 
+Add a `xyz_uvw.resource` file in `resource/` folder, declare `*** Keywords ***` sections.
+Then add a `Abc Def Gh` Keyword(function) in it.  
 
 # Setup
-## Step1 install pythin virtual environment
+## setup robot in pythin virtual environment
 You must install a python virtual environment to avoid broken of you python while setting up robot framework.
 The main reason comes from library dependency.
 
@@ -59,15 +60,18 @@ pyenv local 3.10.13
 pyenv versions
 ```
 
-## Step2 install robotframework
 `pip install robotframework`
 
-## Step3 install useful python lib 
-`pip install -r requirements.txt`
-
-## Step4 try robot
+run robot 
 `cd echo && robot test_xyz.robot`
 
+## setup robot document generator  
+`pip install -r requirements.txt`
+`inv kw-docs`
+
+## setup robot with database access 
+`pip install psycopg2-binary`
+`pip install robotframework-databaselibrary` 
 
 # Rpi Env Setup
 ## Step0 Login
