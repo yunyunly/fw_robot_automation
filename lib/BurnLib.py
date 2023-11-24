@@ -54,10 +54,9 @@ class BurnLib:
         _burn_command.append(f"{os.path.join(self.burn_tool_path, filename)}")
         _burn_command.append(f"{os.path.join(self.burn_tool_path, bootloader)}")
         _burn_command.append(f"{os.path.join(self.burn_tool_path, factory_section_bin)}")
-        Console(f"Burn command({device}): {' '.join(_burn_command)}")
+        Info(f"Burn command({device}): {' '.join(_burn_command)}")
         self.burn_process[device] = subprocess.Popen(' '.join(_burn_command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         self.burning[device] = True
-        Console(f"Burning device: {device.upper()}...")
 
     def burn(
         self,
@@ -86,8 +85,10 @@ class BurnLib:
                 factory_section_bin=self.factory_section_bin[d] if factory_section_bin=="" else factory_section_bin,
                 erase_chip=True if erase_chip=="erase_chip" else False
             )
+            Info(f"Waiting for {d.upper()} prelude handshake...")
             time.sleep(1)
-            self.__prelude_handshake(device)
+            self.__prelude_handshake(d)
+            Info(f"{d.upper()} prelude handshake done.")
 
         self.return_code["l"] = None
         self.return_code["r"] = None
