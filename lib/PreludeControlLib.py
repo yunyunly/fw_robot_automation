@@ -1,6 +1,11 @@
 import time
 from pyftdi.ftdi import Ftdi
+from pyftdi.usbtools import UsbToolsError
+import robot.api.logger 
 
+Console = robot.api.logger.console 
+Debug = robot.api.logger.debug 
+Info = robot.api.logger.info 
 
 class PreludeControlLib:
     def __init__(self):
@@ -87,18 +92,20 @@ class PreludeControlLib:
     def close_ftdi(self, freeze:str="on"):
         freeze = freeze.lower()
         if freeze == "on" or freeze == "true":
-            freeze = True
-        self.ft_handle.close(freeze=freeze)
+            keep_status = True
+        else:
+            keep_status = False
+        self.ft_handle.close(freeze=keep_status)
 
 
 if __name__ == "__main__":
-    prelude = PreludeControl()
     Ftdi.show_devices()
+    prelude = PreludeControlLib()
     prelude.charge("off", "lr")
     time.sleep(0.1)
     prelude.charge("on", "lr")
     time.sleep(1)
-    prelude.charge("on", "lr")
+    prelude.reset("on", "lr")
     time.sleep(0.1)
     prelude.reset("off", "lr")
     prelude.close_ftdi()
