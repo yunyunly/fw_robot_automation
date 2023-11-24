@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+"""The Python implementation of the GRPC remote_worker.RemoteWorker client."""
+
+from __future__ import print_function
+
+import logging
+import sys 
+
+import grpc
+import remote_worker_pb2
+import remote_worker_pb2_grpc 
+
+def create_args():
+    if len(sys.argv) < 2:
+        raise Exception("Cmd to remote not found")
+    argv = []
+    for i in sys.argv[1:]:
+        argv.append(i)
+    
+    while (len(argv) < 14):
+        argv.append("NULL")
+    return argv 
+
+
+def run():
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    with grpc.insecure_channel("localhost:50051") as channel:
+        stub = remote_worker_pb2_grpc.RemoteWorkerStub(channel)
+        argv = create_args()
+        response = stub.CommandLine(remote_worker_pb2.CommandLineRequest(
+            cmd=argv[0],
+            arg0=argv[1],
+            arg1=argv[2],
+            arg2=argv[3],
+            arg3=argv[4],
+            arg4=argv[5],
+            arg5=argv[6],
+            arg6=argv[7],
+            arg7=argv[8],
+            arg8=argv[9],
+            arg9=argv[10],
+            arg10=argv[11],
+            arg11=argv[12],
+            arg12=argv[13],
+            ))
+        for reply in response:
+            if reply.returncode == 3026478:
+                print(reply.stream, end="")
+            else:
+                print("================================")
+                print("returncode:", reply.returncode)
+
+
+
+if __name__ == "__main__":
+    logging.basicConfig()
+    run()

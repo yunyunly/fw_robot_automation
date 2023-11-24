@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "firmware.remote_worker";
+option java_outer_classname = "remote_workerProto";
+option objc_class_prefix = "HLW";
+
+package remote_worker;
+
+// The greeting service definition.
+service RemoteWorker {
+  // Execute a commandline instruction remotely
+  rpc CommandLine (CommandLineRequest) returns (stream CommandLineReply) {}
+}
+
+message CommandLineRequest {
+  string cmd = 1;
+  string arg0 = 2;
+  string arg1 = 3;
+  string arg2 = 4;
+  string arg3 = 5;
+  string arg4 = 6;
+  string arg5 = 7;
+  string arg6 = 8;
+  string arg7 = 9;
+  string arg8 = 10;
+  string arg9 = 11;
+  string arg10 = 12;
+  string arg11 = 13;
+  string arg12 = 14;
+}
+
+message CommandLineReply {
+  string stream = 1;
+  int32 returncode =2;
+}
