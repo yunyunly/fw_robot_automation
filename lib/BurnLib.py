@@ -154,7 +154,7 @@ class BurnLib:
         if self.burning["c"] == True:
             raise RuntimeError(f"Device: c already burning.")
         
-        _burn_command = [f"{os.path.join(self.echo_tool_path, "STM32_Programmer.sh")}"]
+        _burn_command = [f"{os.path.join(self.echo_tool_path, 'STM32_Programmer.sh')}"]
         _burn_command.append(f"-c  port=SWD freq=4000 ap=0 mode=UR -hardRst")
         _burn_command.append(f"-d {os.path.join(self.echo_tool_path, filename)}")
         _burn_command.append(f"-d {os.path.join(self.echo_tool_path, bootloader)}")
@@ -173,7 +173,7 @@ class BurnLib:
                 if self.return_code["c"] is not None:
                     self.burning["c"] = False
                     if self.return_code["c"] != 0:
-                        raise RuntimeError(f"Burn failed. Return Code: {self.return_code["c"]}")
+                        raise RuntimeError(f"Burn failed. Return Code: {self.return_code['c']}")
             if not any(self.burning.values()):
                 break
         return 0

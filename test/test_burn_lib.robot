@@ -1,5 +1,5 @@
 *** Settings ***
-Documentation     Keywords(API) Test Cases for Burn Firmware
+Documentation     Keywords(API) Test Cases for Burning Firmware
 Library           ../lib/BurnLib.py
 
 *** Test Cases ***
@@ -12,5 +12,5 @@ Burn Orka
 Burn Echo
     [Documentation]     Burn firmware to charging case
     [Tags]              Firmware
-    ${ret}=    Burn Echo
+    ${ret}=    Burn Echo    CC-v2.0.9.0.hex     CC-OTA_bootloader.hex
     Should Be True      ${ret} == 0
