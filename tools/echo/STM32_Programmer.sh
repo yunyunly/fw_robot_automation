@@ -1,1 +1,0 @@
-/home/km4sh/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin/STM32_Programmer.sh

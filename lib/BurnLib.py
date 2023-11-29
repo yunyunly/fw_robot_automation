@@ -21,7 +21,7 @@ class BurnLib:
         else:
             pwd = os.path.dirname(os.path.abspath(__file__))
             self.burn_tool_path = os.path.join(os.path.dirname(pwd), "tools")
-        self.orka_tool_path = os.path.join(self.burn_tool_path, "dldtool-ubuntu-v1.4")
+        self.orka_tool_path = os.path.join(self.burn_tool_path, "dldtool")
         self.echo_tool_path = os.path.join(self.burn_tool_path, "echo")
         self.prelude = None
         
