@@ -1,10 +1,9 @@
 import os
+import re
 import time
 import subprocess
 import PreludeControlLib
 import robot.api.logger
-import select
-import fcntl
 
 Console = robot.api.logger.console 
 Debug = robot.api.logger.debug 
@@ -12,26 +11,40 @@ Info = robot.api.logger.info
 
 class BurnLib:
     def __init__(self, burn_tool_path=None):
-        self.burning:dict = {"l":False, "r":False}
-        self.burn_process:dict = {"l":None, "r":None}
+        self.burning:dict = {"l":False, "r":False, "c":False}
+        self.burn_process:dict = {"l":None, "r":None, "c":None}
         self.uart_port:dict = {"l":"/dev/ttyUSB2", "r":"/dev/ttyUSB3"}
-        self.return_code:dict = {"l":None, "r":None}
+        self.return_code:dict = {"l":None, "r":None, "c":None}
         self.factory_section_bin:dict = {"l": "left.bin", "r": "right.bin"}
         if burn_tool_path:
             self.burn_tool_path = burn_tool_path
         else:
-            self.burn_tool_path = os.path.join("/home/km4sh/dev/infra/tools/dldtool-ubuntu-v1.4")
-        try:
-            self.prelude = PreludeControlLib.PreludeControlLib()
-        except PreludeControlLib.UsbToolsError:
-            raise RuntimeError("PreludeControlLib init failed.")
+            pwd = os.path.dirname(os.path.abspath(__file__))
+            self.burn_tool_path = os.path.join(os.path.dirname(pwd), "tools")
+        self.orka_tool_path = os.path.join(self.burn_tool_path, "dldtool")
+        self.echo_tool_path = os.path.join(self.burn_tool_path, "echo")
+        self.prelude = None
         
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(BurnLib, cls).__new__(cls)
         return cls.instance
+    
+    def __remove_ansi_escape_codes(self, text):
+        """ Remove ansi escape codes.
+            Args:
+                text: text to remove ansi escape codes
+        """
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        return ansi_escape.sub('', text)
         
     def __prelude_handshake(self, device):
+        """ Handshake with prelude.
+            Args:
+                device: device to burn, 'l' or 'r'
+        """
+        if self.prelude is None:
+            self.prelude = PreludeControlLib.PreludeControlLib()
         self.prelude.charge("off", device)
         time.sleep(0.5)
         self.prelude.charge("on", device)
@@ -41,24 +54,33 @@ class BurnLib:
         self.prelude.reset("off", device)
 
     def __burn_one_side(self, device:str, programmer:str, filename:str, bootloader:str, factory_section_bin:str, erase_chip:bool):
+        """ Burn one side of orka device.
+            Args:
+                device: device to burn, 'l' or 'r'
+                programmer: programmer bin file name
+                filename: firmware bin file name
+                bootloader: bootloader bin file name
+                factory_section_bin: factory section bin file name (bt/ble names and addresses)
+                erase_chip: erase chip before burn
+        """
         device = device.lower()
         if self.burning[device] == True:
             raise RuntimeError(f"Device: {device} already burning.")
-        _burn_command = [f"{self.burn_tool_path}/dldtool"]
+        _burn_command = [f"{self.orka_tool_path}/dldtool"]
         if erase_chip:
             _burn_command.append(f"--erase-chip")
         _burn_command.append(f"-v -b 921600")
         _burn_command.append(f"{self.uart_port[device]}")
-        _burn_command.append(f"{os.path.join(self.burn_tool_path, programmer)}")
+        _burn_command.append(f"{os.path.join(self.orka_tool_path, programmer)}")
         _burn_command.append(f"-m 0x34020000")
-        _burn_command.append(f"{os.path.join(self.burn_tool_path, filename)}")
-        _burn_command.append(f"{os.path.join(self.burn_tool_path, bootloader)}")
-        _burn_command.append(f"{os.path.join(self.burn_tool_path, factory_section_bin)}")
+        _burn_command.append(f"{os.path.join(self.orka_tool_path, filename)}")
+        _burn_command.append(f"{os.path.join(self.orka_tool_path, bootloader)}")
+        _burn_command.append(f"{os.path.join(self.orka_tool_path, factory_section_bin)}")
         Info(f"Burn command({device}): {' '.join(_burn_command)}")
         self.burn_process[device] = subprocess.Popen(' '.join(_burn_command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         self.burning[device] = True
 
-    def burn(
+    def burn_orka(
         self,
         device:str="lr",
         programmer:str="programmer1600.bin",
@@ -67,12 +89,22 @@ class BurnLib:
         erase_chip:str="erase_chip",
         factory_section_bin:str="",
     ):
+        """ Burn orka device.
+            Args:
+                device: device to burn, 'l' or 'r' or 'lr'
+                programmer: programmer bin file name
+                filename: firmware bin file name
+                bootloader: bootloader bin file name
+                erase_chip: erase chip before burn
+                factory_section_bin: factory section bin file name (bt/ble names and addresses)
+        """
         device = device.lower()
         self.programmer = programmer
         self.filename = filename
         self.bootloader = bootloader
         self.erase_chip = erase_chip
-        
+        if self.prelude is None:
+            self.prelude = PreludeControlLib.PreludeControlLib()
         if "l" not in device and "r" not in device:
             raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
 
@@ -108,6 +140,43 @@ class BurnLib:
                 break
         return 0
     
+    def burn_echo(
+        self,
+        filename:str="CC-v2.0.9.0.hex",
+        bootloader:str="CC-OTA_bootloader.hex",
+    ):
+        """ Burn echo device.
+            Args:
+                tool_path: path of STM32_Programmer.sh
+                filename: firmware hex file name
+                bootloader: bootloader hex file name
+        """
+        if self.burning["c"] == True:
+            raise RuntimeError(f"Device: c already burning.")
+        
+        _burn_command = [f"{os.path.join(self.echo_tool_path, 'STM32_Programmer.sh')}"]
+        _burn_command.append(f"-c  port=SWD freq=4000 ap=0 mode=UR -hardRst")
+        _burn_command.append(f"-d {os.path.join(self.echo_tool_path, filename)}")
+        _burn_command.append(f"-d {os.path.join(self.echo_tool_path, bootloader)}")
+        _burn_command.append(f"--start 0x08000000")
+        Info(f"Burn command(c): {' '.join(_burn_command)}")
+        self.burn_process["c"] = subprocess.Popen(' '.join(_burn_command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        self.burning["c"] = True
+        self.return_code["c"] = None
+        while True:
+            if self.burning["c"] == True:
+                self.return_code["c"] = self.burn_process["c"].poll()
+                stdout = self.burn_process["c"].stdout.read().decode('ascii')
+                stderr = self.burn_process["c"].stderr.read().decode('ascii')
+                Info(f"[C:]{self.__remove_ansi_escape_codes(stdout)}")
+                Debug(f"[C:]{self.__remove_ansi_escape_codes(stderr)}")
+                if self.return_code["c"] is not None:
+                    self.burning["c"] = False
+                    if self.return_code["c"] != 0:
+                        raise RuntimeError(f"Burn failed. Return Code: {self.return_code['c']}")
+            if not any(self.burning.values()):
+                break
+        return 0
 # if __name__ == "__main__":
 #     burn = BurnLib()
 #     burn.burn(device="lr", erase_chip="erase_chip")
