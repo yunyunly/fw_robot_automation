@@ -55,7 +55,7 @@ class HearingAidsLib:
         """Connect To hearing aid classic bluetooth to access media point.  
         
         Examples:
-        | Connect Hearing Aid | D0:14:11:20:20:18 |
+        | Connect Hearing Aid Classic | D0:14:11:20:20:18 |
         """
         self.blue.bt_connect_hearing_aids(addr)
         return 
