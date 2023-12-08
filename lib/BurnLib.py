@@ -138,6 +138,16 @@ class BurnLib:
                             raise RuntimeError(f"Burn failed. Return Code: {self.return_code[d]}")
             if not any(self.burning.values()):
                 break
+        time.sleep(0.5)               #additional prelude commands to make sure has is on
+        self.prelude.charge("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("on", device)
+        time.sleep(0.2)
+        self.prelude.reset("on", device)
+        time.sleep(0.5)
+        self.prelude.reset("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("off", device)
         return 0
     
     def burn_echo(

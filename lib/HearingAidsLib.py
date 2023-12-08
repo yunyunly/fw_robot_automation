@@ -360,7 +360,7 @@ class HearingAidsLib:
         self.blue.ble_send_hearing_aids(cmd)
 
     # def check_general_status(self):
-    #     cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.CHECK_GENERAL_STATUS.value]
+    #     cmd = [CMD_TPYE.STATUS_CHECK.value, CHECK.CHECK_GENERAL_STATUS.value,0x00,0x00]
     #     self.blue.ble_send_hearing_aids(cmd)
     #     return 
     # 

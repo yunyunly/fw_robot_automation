@@ -270,8 +270,6 @@ class SerialLib(object):
         | ${datas} = | Serial Read Until Regex | Left | Data: (\w+) (\d+) | timeout=10 |
         | ${datas} = | Serial Read Until Regex | Right | Data: (\w+) (\d+) | timeout=10 |
         """
-        inst = self.case 
-        results = self.case_results
         match kind:
             case "Case":
                 inst = self.case
@@ -295,7 +293,7 @@ class SerialLib(object):
                 ret = list(match.groups())
                 break
             
-            if timeout is not None and time.time() - start_time >= timeout:
+            if timeout is not None and time.time() - start_time >= float(timeout):
                 ret = None 
                 break
         if parallel_idx == None :
