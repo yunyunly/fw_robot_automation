@@ -48,17 +48,24 @@ class HearingAidsLib:
         Examples:
         | Connect Hearing Aid | D0:14:11:20:20:18 |
         """
-        Logger.info("Call Blue Connect HA")
         self.blue.ble_connect_hearing_aids(addr)
         return 
     
+    def connect_hearing_aids_classic(self, addr):
+        """Connect To hearing aid classic bluetooth to access media point.  
+        
+        Examples:
+        | Connect Hearing Aid Classic | D0:14:11:20:20:18 |
+        """
+        self.blue.bt_connect_hearing_aids(addr)
+        return 
+    
     def disconnect_hearing_aids(self, addr):
-        """Disconnect To hearing aid before you send any message to it.  
+        """Disconnect To hearing aids, both le and classic.  
         
         Examples:
         | Disconnect Hearing Aid | D0:14:11:20:20:18 |
         """
-        Logger.info("Call Blue Disconnect HA")
         self.blue.ble_disconnect_hearing_aids(addr)
         return 
     
