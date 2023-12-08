@@ -98,14 +98,14 @@ class PreludeControlLib:
         self.ft_handle.close(freeze=keep_status)
 
 
-if __name__ == "__main__":
-    Ftdi.show_devices()
-    prelude = PreludeControlLib()
-    prelude.charge("off", "lr")
-    time.sleep(0.1)
-    prelude.charge("on", "lr")
-    time.sleep(1)
-    prelude.reset("on", "lr")
-    time.sleep(0.1)
-    prelude.reset("off", "lr")
-    prelude.close_ftdi()
+# if __name__ == "__main__":
+#     Ftdi.show_devices()
+#     prelude = PreludeControlLib()
+#     prelude.charge("off", "lr")
+#     time.sleep(0.1)
+#     prelude.charge("on", "lr")
+#     time.sleep(1)
+#     prelude.reset("on", "lr")
+#     time.sleep(0.1)
+#     prelude.reset("off", "lr")
+#     prelude.close_ftdi()

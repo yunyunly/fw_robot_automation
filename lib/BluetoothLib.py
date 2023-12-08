@@ -374,11 +374,11 @@ class BluetoothLib(object):
             print(e)
             return False
       
-if __name__ == "__main__":
-    ble = BluetoothLib()
-    if True == ble.bt_connect_hearing_aids("12:34:56:78:A0:B3"):
-        # wait some time better
-        time.sleep(5)
-        ble.ble_connect_hearing_aids("12:34:56:78:A0:B3")
-    output = subprocess.check_output(["busctl", "tree", "org.bluez"])
-    print(output.decode())
+# if __name__ == "__main__":
+#     ble = BluetoothLib()
+#     if True == ble.bt_connect_hearing_aids("12:34:56:78:A0:B3"):
+#         # wait some time better
+#         time.sleep(5)
+#         ble.ble_connect_hearing_aids("12:34:56:78:A0:B3")
+#     output = subprocess.check_output(["busctl", "tree", "org.bluez"])
+#     print(output.decode())
