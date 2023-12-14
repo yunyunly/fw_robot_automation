@@ -10,6 +10,17 @@ import robot.api.logger
  
 
 Console = robot.api.logger.console 
+
+ENCODE = "ISO-8859-1"
+
+class CondRead:
+    def __init__(self):
+        self.expected = None 
+        self.timeout = None
+        self.result = None
+        self.is_matched = False
+        self.is_timeouted = False 
+
 class SerialLib(object):
     """Test library for control serial port
     
@@ -21,26 +32,17 @@ class SerialLib(object):
         self.case :SerialLogger
         self.left :SerialLogger
         self.right :SerialLogger
-        self.case_threads = []
-        self.left_threads = []
-        self.right_threads = []
+        self.case_waiting_list = []
+        self.left_waiting_list = []
+        self.right_waiting_list = []
+        self.case_waiting_thread = None 
+        self.left_waiting_thread = None 
+        self.right_waiting_thread = None
         return 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(SerialLib, cls).__new__(cls)
         return cls.instance
-
-    def release(self):
-        for i in self.case_threads +self.left_threads+self.right_threads:
-            i.start()
-        for i in self.case_threads +self.left_threads+self.right_threads:
-            i.join()
-        if hasattr(self, "case"):
-            self.case.release() 
-        if hasattr(self, "left"):
-            self.left.release()
-        if hasattr(self, "right"):
-            self.right.release()
 
     def serial_open_port(self, kind, port, bard_rate):
         """Open serial port with specified bard rate.
@@ -54,19 +56,12 @@ class SerialLib(object):
             case "Case":
                 Console("open Case")
                 self.case = SerialLogger(port, bard_rate)
-                self.case_results = []
-                self.case_threads = []
-                self.case_thread_count = 0
             case "Left":
                 Console("open Left")
                 self.left = SerialLogger(port, bard_rate)
-                self.left_results = []
-                self.left_thread_count = 0
             case "Right":
                 Console("open Right")
                 self.right = SerialLogger(port, bard_rate)
-                self.right_results = []
-                self.right_thread_count = 0
             case _:
                 raise Exception("Invalid kind")
         return 
@@ -81,84 +76,14 @@ class SerialLib(object):
         """
         match kind:
             case "Case":
-                self.case.release() 
+                del self.case
             case "Left":
-                self.left.release()
+                del self.left
             case "Right":
-                self.right.release()
+                del self.right
             case _:
                 raise Exception("Invalid kind")
         return 
-
-    def serial_save(self, kind):
-        """Save current log into files.
-        The log file named log-{time}.txt and are stored in current working dir.
-        
-        Examples:
-        | Serial Save | Case |
-        | Serial Save | Left |
-        | Serial Save | Right |
-        """
-        match kind:
-            case "Case":
-                self.case.save()
-            case "Left":
-                self.left.save()
-            case "Right":
-                self.right.save()
-            case _:
-                raise Exception("Invalid kind")
-        return 
-    
-    def serial_read(self, kind):
-        """Read the latest line of serial port 
-        One line of serial data can be returned multi-times by this call
-        
-        Return:
-        None if no new incoming serial data in cache 
-        String otherwise 
-
-        Examples:
-        | ${data}= | Serial Read | Case |
-        | ${data}= | Serial Read | Left |
-        | ${data}= | Serial Read | Right |
-        """
-        ret = ""
-        match kind:
-            case "Case":
-                ret = self.case.read(uuid4()) 
-            case "Left":
-                ret = self.left.read(uuid4())
-            case "Right":
-                ret = self.right.read(uuid4())
-            case _:
-                raise Exception("Invalid kind")
-        return ret 
-    
-    def serial_read_blocking(self, kind):
-        """Read the latest line of serial port.
-        One line of serial data can be returned one times by this call.
-        If no new incoming data, this function will block execution until read a new line.
-        
-        Return:
-        String 
-
-        Examples:
-        | ${data}= | Serial Read Blocking | Case |
-        | ${data}= | Serial Read Blocking | Left |
-        | ${data}= | Serial Read Blocking | Right |
-        """
-        ret = ""
-        match kind:
-            case "Case":
-                ret = self.case.read_blocking(uuid4()) 
-            case "Left":
-                ret = self.left.read_blocking(uuid4())
-            case "Right":
-                ret = self.right.read_blocking(uuid4())
-            case _:
-                raise Exception("Invalid kind")
-        return ret 
 
     def serial_write_str(self, kind, data):
         """Write string to serial port.
@@ -200,7 +125,7 @@ class SerialLib(object):
                 raise Exception("Invalid kind")
         return ret 
 
-    def serial_read_until(self, kind, exp, timeout=None, parallel_idx = None):
+    def serial_read_until(self, kind, exp=None, timeout=None):
         """Wait for a specific string from the serial port.
 
         This function will continuously listen for data until the expected string is received or the timeout is reached.
@@ -215,44 +140,54 @@ class SerialLib(object):
         | ${ret}=    | Serial Read Until | Case | hello, world | 
         | ${ret}=    | Serial Read Until | Left | Hello, World! | timeout=10 |
         | ${ret}=    | Serial Read Until | Right | Hello, World! | timeout=10 |
+
+        Special case to read a new line:
+        | ${ret}=    | Serial Read Until | Case |
         """
-        inst = self.case 
-        results = self.case_results 
         if timeout != None:
             timeout = float(timeout)
         match kind:
             case "Case":
                 inst = self.case
-                results = self.case_results
             case "Left":
                 inst = self.left
-                results = self.left_results
             case "Right":
                 inst = self.right
-                results = self.right_results
             case _:
                 raise Exception("Invalid kind")
-        start_time = time.time()
         ret = None
-        id =uuid4()
+        inst.set_read_timeout(1)
+        time_cost = 0
         while True:
-            newline = inst.read_blocking(id)
-            print("until check", newline)
-            match = re.search(exp, newline)
-
-            if match:
-                ret = match.string 
-                break
-            
-            if timeout is not None and time.time() - start_time >= timeout:
-                ret = None 
+            pretime = time.time()
+            line = inst.readline()
+            postime = time.time()
+            time_cost = time_cost + (postime - pretime)
+            #print("time cost", time_cost)
+            if line is None and timeout is None:
+                continue
+            elif line is None and time_cost >= timeout:
                 break 
-        if parallel_idx == None :
-            return ret 
-        else:
-            results[parallel_idx] = ret
-    
-    def serial_read_until_regex(self, kind, patt, timeout=None, parallel_idx=None):
+            elif line is None:
+                continue
+            else:
+                pass
+            if exp is None:
+                ret = line 
+                break
+            else:
+                match = re.search(exp, line)
+                if match:
+                    ret = match.string 
+                    break
+            if timeout is None:
+                continue
+            if time_cost >= timeout:
+                break
+        inst.clear_read_timeout()
+        return ret 
+
+    def serial_read_until_regex(self, kind, patt, timeout=None):
         """Wait for string matching a given regular expression pattern.
 
         This function will continuously listen for data until data matching the specified pattern is received or the timeout is reached.
@@ -270,36 +205,44 @@ class SerialLib(object):
         | ${datas} = | Serial Read Until Regex | Left | Data: (\w+) (\d+) | timeout=10 |
         | ${datas} = | Serial Read Until Regex | Right | Data: (\w+) (\d+) | timeout=10 |
         """
+        if timeout != None:
+            timeout = float(timeout)
         match kind:
             case "Case":
                 inst = self.case
-                results = self.case_results
             case "Left":
                 inst = self.left
-                results = self.left_results
             case "Right":
                 inst = self.right
-                results = self.right_results
             case _:
                 raise Exception("Invalid kind")
-        start_time = time.time()
         ret = None
-        id = uuid4()
+        inst.set_read_timeout(1)
+        time_cost = 0
         while True:
-            newline = inst.read_blocking(id)
-            match = re.search(patt, newline)
-
+            pretime = time.time()
+            line = inst.readline()
+            postime = time.time()
+            time_cost = time_cost + (postime - pretime)
+            #print("time cost", time_cost)
+            if line is None and timeout is None:
+                continue
+            elif line is None and time_cost >= timeout:
+                break 
+            elif line is None:
+                continue
+            else:
+                pass
+            match = re.search(patt, line)
             if match:
-                ret = list(match.groups())
+                ret = list(match.groups()) 
                 break
-            
-            if timeout is not None and time.time() - start_time >= float(timeout):
-                ret = None 
+            if timeout is None:
+                continue
+            if time_cost >= timeout:
                 break
-        if parallel_idx == None :
-            return ret 
-        else:
-            results[parallel_idx] = ret
+        inst.clear_read_timeout()
+        return ret 
 
     def serial_parallel_read_until(self, kind, exp, timeout=None):
         """Register a read event, this event is pushed to a queue but not executed.
@@ -309,22 +252,57 @@ class SerialLib(object):
         | Serial Parallel Read Until | Left | say hello | timeout=${3} |
         | Serial Parallel Read Until | Right | say hello | timeout=${3} |
         """
+        def parallel_read_until(serial_inst, waiting_list):
+            ret = None
+            serial_inst.set_read_timeout(1)
+            time_cost = 0
+            while True:
+                pretime = time.time()
+                line = serial_inst.readline()
+                postime = time.time()
+                time_cost = time_cost + (postime - pretime)
+                #print("time cost", time_cost)
+                for i in waiting_list:
+                    if i.is_matched or i.is_timeouted:
+                        continue 
+                    if line is None:
+                        match = None 
+                    else: 
+                        match = re.search(i.expected, line)
+                    if match:
+                        i.result = match.string
+                        i.is_matched = True 
+                        continue 
+                    if i.timeout is None:
+                        continue 
+                    elif time_cost >= i.timeout:
+                        i.is_timeouted = True 
+                        continue
+                if all( i.is_timeouted or i.is_matched for i in waiting_list):
+                    break
+            serial_inst.clear_read_timeout()
         match kind:
             case "Case":
-                new_thread = threading.Thread(target = self.serial_read_until, args = (kind, exp, timeout, self.case_thread_count))
-                self.case_results.append(None)
-                self.case_threads.append(new_thread)
-                self.case_thread_count += 1 
+                if self.case_waiting_thread is None:
+                    self.case_waiting_thread = threading.Thread(target = parallel_read_until, args = (self.case, self.case_waiting_list))      
+                one = CondRead()
+                one.expected = exp 
+                one.timeout = timeout 
+                self.case_waiting_list.append(one)
             case "Left":
-                new_thread = threading.Thread(target = self.serial_read_until, args = (kind, exp, timeout, self.left_thread_count))
-                self.left_results.append(None)
-                self.left_threads.append(new_thread)
-                self.left_thread_count += 1 
+                if self.left_waiting_thread is None:
+                    self.left_waiting_thread = threading.Thread(target = parallel_read_until, args = (self.left, self.left_waiting_list))      
+                one = CondRead()
+                one.expected = exp 
+                one.timeout = timeout 
+                self.left_waiting_list.append(one)
             case "Right":
-                new_thread = threading.Thread(target = self.serial_read_until, args = (kind, exp, timeout, self.right_thread_count))
-                self.right_results.append(None)
-                self.right_threads.append(new_thread)
-                self.right_thread_count += 1 
+                if self.right_waiting_thread is None:
+                    self.right_waiting_thread = threading.Thread(target = parallel_read_until, args = (self.right, self.right_waiting_list))      
+                one = CondRead()
+                one.expected = exp 
+                one.timeout = timeout 
+                self.right_waiting_list.append(one)
             case _:
                 raise Exception("Invalid kind")
     
@@ -336,25 +314,60 @@ class SerialLib(object):
         | Serial Parallel Read Until Regex | Left | say ([a-zA-Z]+) | timeout=${3} |
         | Serial Parallel Read Until Regex | Right | say ([a-zA-Z]+) | timeout=${3} |
         """
+        def parallel_read_until_regex(serial_inst, waiting_list):
+            ret = None
+            serial_inst.set_read_timeout(1)
+            time_cost = 0
+            while True:
+                pretime = time.time()
+                line = serial_inst.readline()
+                postime = time.time()
+                time_cost = time_cost + (postime - pretime)
+                #print("time cost", time_cost)
+                for i in waiting_list:
+                    if i.is_matched or i.is_timeouted:
+                        continue 
+                    if line is None:
+                        match = None 
+                    else: 
+                        match = re.search(i.expected, line)
+                    if match:
+                        i.result = list(match.groups())
+                        i.is_matched = True 
+                        continue 
+                    if i.timeout is None:
+                        continue 
+                    elif time_cost >= i.timeout:
+                        i.is_timeouted = True 
+                        continue
+                if all( i.is_timeouted or i.is_matched for i in waiting_list):
+                    break
+            serial_inst.clear_read_timeout()
         match kind:
             case "Case":
-                new_thread = threading.Thread(target = self.serial_read_until_regex, args = (kind, patt, timeout, self.case_thread_count))
-                self.case_results.append(None)
-                self.case_threads.append(new_thread)
-                self.case_thread_count += 1 
+                if self.case_waiting_thread is None:
+                    self.case_waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (self.case, self.case_waiting_list))      
+                one = CondRead()
+                one.expected = patt 
+                one.timeout = timeout 
+                self.case_waiting_list.append(one)
             case "Left":
-                new_thread = threading.Thread(target = self.serial_read_until_regex, args = (kind, patt, timeout, self.left_thread_count))
-                self.left_results.append(None)
-                self.left_threads.append(new_thread)
-                self.left_thread_count += 1 
+                if self.left_waiting_thread is None:
+                    self.left_waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (self.left, self.left_waiting_list))      
+                one = CondRead()
+                one.expected = patt
+                one.timeout = timeout 
+                self.left_waiting_list.append(one)
             case "Right":
-                new_thread = threading.Thread(target = self.serial_read_until_regex, args = (kind, patt, timeout, self.right_thread_count))
-                self.right_results.append(None)
-                self.right_threads.append(new_thread)
-                self.right_thread_count += 1 
+                if self.right_waiting_thread is None:
+                    self.right_waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (self.right, self.right_waiting_list))      
+                one = CondRead()
+                one.expected = patt
+                one.timeout = timeout 
+                self.right_waiting_list.append(one)
             case _:
                 raise Exception("Invalid kind")
-
+        
     def serial_parallel_wait(self, kind_list):
         """Execute all read event in parallel and wait complete 
 
@@ -365,121 +378,63 @@ class SerialLib(object):
         | ${ret}= | Serial Parallel Wait | Case Left Right |
         """
         total = []
-        if "Case" in kind_list:
-            total += self.case_threads
-        if "Left" in kind_list:
-            total += self.left_threads 
-        if "Right" in kind_list:
-            total += self.right_threads 
-
+        total += [self.case_waiting_thread] if self.case_waiting_thread else [] 
+        total += [self.left_waiting_thread] if self.left_waiting_thread else [] 
+        total += [self.right_waiting_thread] if self.right_waiting_thread else [] 
+        
+        results = {"Case": list(), "Left": list(), "Right": list()}
+        
         for i in total:
             i.start()
         for i in total:
             i.join()
-        results = {}
+        
         if "Case" in kind_list:
-            results["Case"] = self.case_results.copy()
-            self.case_results.clear()
-            self.case_threads.clear()
-            self.case_thread_count = 0
+            for i in self.case_waiting_list:
+                results["Case"].append(i.result)
         if "Left" in kind_list:
-            results["Left"] = self.left_results.copy()
-            self.left_results.clear()
-            self.left_threads.clear()
-            self.left_thread_count = 0
+            for i in self.left_waiting_list:
+                results["Left"].append(i.result)
         if "Right" in kind_list:
-            results["Right"] = self.right_results.copy()
-            self.right_results.clear()
-            self.right_threads.clear()
-            self.right_thread_count = 0
+            for i in self.right_waiting_list:
+                results["Right"].append(i.result)
         return results 
 
 class SerialLogger(object):
     def __init__(self, port, bard_rate):
-        self.io_opened = False
-        self.opened = False 
         self.logs = []
-        self.total_idx = 0
-        self.clients = {}
-        self.client_history = 0
-        self.more = threading.Event()
-
         self.serial = serial.Serial(port, bard_rate)
-        self.io = threading.Thread(target=self.io_handler)
-        self.opened = True 
-        self.more.clear()
-        self.io.start()
-        
-        print("constructor")
+        self.cnt = 0
         return 
     
-    def release(self):
-        self.opened = False
-        self.io.join()
-        self.serial.close()
+    def __del__(self):
+        self.serial.cancel_read()
+        if self.serial.is_open:
+            self.serial.close()
+        print("Serial Exit")
 
-    def io_handler(self):
-        self.io_opened = True 
-        while (True) :
-            # print("check break...")
-            if self.opened == False:
-                print("io handler exit")
-                break
-            try:
-                # print("reading...")
-                newline = self.serial.readline().decode("utf-8").strip()
-            except:
-                newline = "serial closed"
-            if newline == "":
-                continue
-            timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')[:-3]
-            log_entry = f"{self.total_idx}[{timestamp}] {newline}"
-            self.total_idx +=1
-            self.logs.append(log_entry)
-            # print(f"readline {newline}")
-            #print("check waiting...")
-            if self.is_newline_waited():
-                # print("notify wait flag...")
-                self.notify_newline()
-        self.io_opened = False 
+    def readline(self) -> str|None:
+        line = ""
+        if self.serial.timeout is None:
+            while line == "":
+                line = self.serial.readline().decode(ENCODE).strip()
+        else:
+            while True:
+                line_without_strip = self.serial.readline().decode(ENCODE) 
+                if line_without_strip != "":
+                    line = line_without_strip.strip()
+                    if line == "":
+                        continue
+                    else:
+                        break 
+                else:
+                    line = None 
+                    break
+        print("Rd",self.cnt, line)
+        if not line is None:
+            self.cnt = self.cnt + 1
+        return line 
 
-    def wait_newline(self):
-        self.more.clear()
-        self.more.wait()
-        return 
-    
-    def is_newline_waited(self):
-        return not self.more.is_set() 
-
-    def notify_newline(self):
-        self.more.set()
-        return 
-
-    def read(self, id)->str|None:
-        if id not in self.clients.keys():
-            self.clients[id] = self.client_history 
-        if len(self.logs) == self.clients[id]:
-            return None 
-        newline = self.logs[self.clients[id]]
-        self.clients[id] += 1
-        if self.client_history < self.clients[id]:
-            self.client_history = self.clients[id]
-        return newline
-    
-    def read_blocking(self, id)->str:
-        if id not in self.clients.keys():
-            self.clients[id] = self.client_history
-        if len(self.logs) == self.clients[id]:
-            self.wait_newline()
-        newline = self.logs[self.clients[id]]
-        self.clients[id] = self.clients[id] + 1
-        print(id, "read", newline)
-        if newline == None:
-            raise TypeError("Should not be None type")
-        if self.client_history < self.clients[id]:
-            self.client_history = self.clients[id]
-        return newline
-    
     def write_str(self, data):
             data_bytes = data.encode()
             self.serial.write(data_bytes)
@@ -488,28 +443,16 @@ class SerialLogger(object):
         data_bytes = bytes.fromhex(data)
         self.serial.write(data_bytes)
 
-    def save(self, filepath=None):
-        if filepath :
-            print("filepath not implemented yet")
-            pass
-        else:
-            timestamp = datetime.datetime.now().strftime('%d:%H:%M:%S')
-            filename = f"log-{timestamp}.txt"
-            with open(filename, "a") as file:
-                for log_entry in self.logs:
-                    file.write(log_entry+"\n")
+    def set_read_timeout(self, timeout: float):
+        self.serial.timeout = timeout 
 
-
-
-
-
+    def clear_read_timeout(self):
+        self.serial.timeout = None
 
 # if __name__ == "__main__":
 #     sl = SerialLib()
 #     sl.serial_open_port("Case", "/dev/ttyACM0", 115200)
-#     sl.serial_open_port("Left", "/dev/ttyUSB0", 1152000)
-#     for i in range(100):
-#         print(sl.serial_read_blocking("Case"))
-#         print(sl.serial_read_blocking("Left"))
-#
-#     sl.release()
+#     print(sl.serial_read_until("Case", "charge", timeout=8))
+#     sl.serial_parallel_read_until("Case", "charge", timeout=8)
+#     sl.serial_parallel_read_until("Case", "charge", timeout=3)
+#     print(sl.serial_parallel_wait("Case"))

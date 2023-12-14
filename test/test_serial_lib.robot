@@ -10,20 +10,6 @@ Default Tags      Serial
 Library           ../lib/SerialLib.py
 
 *** Test Cases ***
-Serial read not blocking
-        ${line} =    Serial Read    Case
-        Log    ${line}
-        ${line} =    Serial Read    Left
-        Log    ${line}
-
-Serial read blocking
-        FOR    ${i}    IN RANGE    1    10
-                ${line0} =    Serial Read Blocking    Case
-                LOG    ${line0}
-                ${line0} =    Serial Read Blocking    Left
-                LOG    ${line0}
-        END
-
 Serial read until string
         ${line} =    Serial Read Until    Case    heartbeat
         ${line} =    Serial Read Until    Left    watchdog
@@ -59,11 +45,20 @@ Serial read parallel
 
 Serial read parallel regex
     ${ret}=    Serial Parallel Read Until Regex    Case    heart(.)
-    ${ret}=    Serial Parallel Read Until Regex    Left    feed (.)
+    ${ret}=    Serial Parallel Read Until Regex    Left    feed watch(.)og
     ${ret}=    Serial Parallel Wait    Case Left
     Should Be Equal    ${ret}[Case][0][0]    b
-    Should Be Equal    ${ret}[Left][0][0]    w
+    Should Be Equal    ${ret}[Left][0][0]    d
 
+Serial read newline 
+    ${ret}=    Serial Read Until     Case      
+    Log   ${ret}
+    ${ret}=    Serial Read Until     Left      
+    Log   ${ret}
+    ${ret}=    Serial Read Until     Case      
+    Log   ${ret}
+    ${ret}=    Serial Read Until     Left      
+    Log   ${ret}
 *** Keywords ***
 Serial Open All
     Serial Open Port    Case    /dev/ttyACM0    115200
@@ -73,21 +68,3 @@ Serial Close All
     Serial Close Port    Case
     Serial Close Port    Left
 
-Read Until Regex
-        Log    Deprecated
-        # [Arguments] \ \ \ ${pattern}
-        # ${ret} \ \ \ Set Variable \ \ \ null
-        # WHILE \ \ \ True
-                # ${newline}= \ \ \ Serial Read Newest
-                # IF \ \ \ "${newline}" == "${None}"
-                        # CONTINUE
-                # END
-                # IF \ \ \ "${newline}" == ""
-                        # CONTINUE
-                # END
-                # ${ret}= \ \ \ Should Match Regexp \ \ \ ${newline} \ \ \ ${pattern}
-                # IF \ \ \ "${ret}" != "${None}"
-                        # BREAK
-                # END
-        # END
-        # RETURN \ \ \ ${ret}
