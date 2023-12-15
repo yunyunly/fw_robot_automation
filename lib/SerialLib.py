@@ -329,7 +329,7 @@ class SerialLib(object):
         | ${ret}= | Serial Parallel Wait | Case Left Right |
         """
         total = []
-        if set(tag_list) - set(self.serialDevices.tags()):
+        if set(tag_list) - set(self.serialDevices.keys()):
             raise Exception("Invalid tag")
         else:
             for i in tag_list:
