@@ -38,13 +38,14 @@ class BurnLib:
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         return ansi_escape.sub('', text)
         
-    def __prelude_handshake(self, device):
+    def __prelude_handshake(self, device, prelude_id:str="1"):
         """ Handshake with prelude.
             Args:
                 device: device to burn, 'l' or 'r'
         """
         if self.prelude is None:
             self.prelude = PreludeControlLib.PreludeControlLib()
+            self.prelude.open_device(prelude_id)
         self.prelude.charge("off", device)
         time.sleep(0.5)
         self.prelude.charge("on", device)
@@ -79,9 +80,14 @@ class BurnLib:
         Info(f"Burn command({device}): {' '.join(_burn_command)}")
         self.burn_process[device] = subprocess.Popen(' '.join(_burn_command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         self.burning[device] = True
+    
+    def update_ha_port(self, port_left:str="/dev/ttyUSB2", port_right:str="/dev/ttyUSB3"):
+        self.uart_port["l"]=port_left
+        self.uart_port["r"]=port_right
 
     def burn_orka(
         self,
+        prelude_id: str="1",
         device:str="lr",
         programmer:str="programmer1600.bin",
         filename:str="best1600_tws.bin",
@@ -105,6 +111,7 @@ class BurnLib:
         self.erase_chip = erase_chip
         if self.prelude is None:
             self.prelude = PreludeControlLib.PreludeControlLib()
+            self.prelude.open_device(prelude_id)
         if "l" not in device and "r" not in device:
             raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
 
@@ -119,7 +126,7 @@ class BurnLib:
             )
             Info(f"Waiting for {d.upper()} prelude handshake...")
             time.sleep(1)
-            self.__prelude_handshake(d)
+            self.__prelude_handshake(d,prelude_id=prelude_id)
             Info(f"{d.upper()} prelude handshake done.")
 
         self.return_code["l"] = None

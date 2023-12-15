@@ -1,6 +1,6 @@
 import time
 from pyftdi.ftdi import Ftdi
-from pyftdi.usbtools import UsbToolsError
+import usb.core
 import robot.api.logger 
 
 Console = robot.api.logger.console 
@@ -16,21 +16,28 @@ class PreludeControlLib:
         self.POW1 = 0x10
         self.POW2 = 0x20
         self.ft_handle = Ftdi()
-        self.ft_handle.open_bitbang_from_url("ftdi://ftdi:4232:FT66ORKA/1")
-        self.ft_handle.set_bitmode(0xFF, Ftdi.BitMode.BITBANG)
-        self.ft_handle.read_data_set_chunksize(4096)
-        self.ft_handle.write_data_set_chunksize(4096)
-        self.ft_handle.set_event_char(0, False)
-        self.ft_handle.set_latency_timer(16)
-        self.ft_handle.set_flowctrl("")
-        self.ft_handle.set_baudrate(62500)
-        self.__communicate_ftdi(0xff, 0)
+        self.usb_devices = list()
+        self.__find_all_prelude()
     
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(PreludeControlLib, cls).__new__(cls)
         return cls.instance
-    
+
+    def __find_all_prelude(self):
+        devices = usb.core.find(find_all=True)
+        if not devices:
+            raise FileNotFoundError("No USB device detected.")
+        for device in devices:
+            try:
+                if device.serial_number == "FT66ORKA":
+                    self.usb_devices.append(device)
+            except Exception as e:
+                pass
+        if len(self.usb_devices) == 0:
+            raise FileNotFoundError("No Prelude device detected.")
+            
+
     def __communicate_ftdi(self, gpio, state):
         w_data_len = 7
         data_out = bytearray([0] * w_data_len)
@@ -48,6 +55,31 @@ class PreludeControlLib:
         self.ft_handle.write_data(data_out)
 
         return True
+    
+    def open_device(self, i:str="1"):
+        if type(eval(i)) != int:
+            raise TypeError
+        else:
+            index = eval(i)
+        if index > len(self.usb_devices):
+            raise IndexError("Exceed the number of connected Prelude")
+        device = self.usb_devices[index-1]
+        Info(f"Opening Prelude: BUS:{device.bus} ADDRESS:{device.address}")
+        print(f"Opening Prelude: BUS:{device.bus} ADDRESS:{device.address}")
+        try:
+            self.ft_handle.open_bitbang_from_device(device)
+        except Exception as e:
+            Info(f"Open Prelude failed, raise error: {e}")
+            raise e
+        self.ft_handle.set_bitmode(0xFF, Ftdi.BitMode.BITBANG)
+        self.ft_handle.read_data_set_chunksize(4096)
+        self.ft_handle.write_data_set_chunksize(4096)
+        self.ft_handle.set_event_char(0, False)
+        self.ft_handle.set_latency_timer(16)
+        self.ft_handle.set_flowctrl("")
+        self.ft_handle.set_baudrate(62500)
+        self.__communicate_ftdi(0xff, 0)
+    
     
     def charge(self, enable:str="on", device:str="lr"):
         device_pin = 0x00
@@ -98,14 +130,15 @@ class PreludeControlLib:
         self.ft_handle.close(freeze=keep_status)
 
 
-# if __name__ == "__main__":
-#     Ftdi.show_devices()
-#     prelude = PreludeControlLib()
-#     prelude.charge("off", "lr")
-#     time.sleep(0.1)
-#     prelude.charge("on", "lr")
-#     time.sleep(1)
-#     prelude.reset("on", "lr")
-#     time.sleep(0.1)
-#     prelude.reset("off", "lr")
-#     prelude.close_ftdi()
+if __name__ == "__main__":
+    Ftdi.show_devices()
+    prelude = PreludeControlLib()
+    prelude.open_device("2")
+    prelude.charge("off", "lr")
+    time.sleep(0.1)
+    prelude.charge("off", "lr")
+    time.sleep(1)
+    prelude.reset("on", "lr")
+    time.sleep(0.1)
+    prelude.reset("off", "lr")
+    prelude.close_ftdi()
