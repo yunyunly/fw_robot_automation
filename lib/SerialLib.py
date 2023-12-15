@@ -21,6 +21,27 @@ class CondRead:
         self.is_matched = False
         self.is_timeouted = False 
 
+class SerialDevice(object):
+    """each serial port created matches one SerialDevice
+
+    Properties:
+    - logger: IO thread used to read and write data to serial port
+    - waiting_list: a list of CondRead, each CondRead is a read event
+    - waiting_thread: a thread to execute all read event in waiting_list
+        
+    """
+
+    def __init__(self, port, bard_rate):
+        self.logger: SerialLogger = SerialLogger(port, bard_rate)
+        self.waiting_list = []
+        self.waiting_thread = None
+    
+    def __del__(self):
+        del self.logger
+        self.waiting_list.clear()
+        self.waiting_thread = None
+
+
 class SerialLib(object):
     """Test library for control serial port
     
@@ -29,63 +50,41 @@ class SerialLib(object):
     bard rate: 115200 
     """
     def __init__(self):
-        self.case :SerialLogger
-        self.left :SerialLogger
-        self.right :SerialLogger
-        self.case_waiting_list = []
-        self.left_waiting_list = []
-        self.right_waiting_list = []
-        self.case_waiting_thread = None 
-        self.left_waiting_thread = None 
-        self.right_waiting_thread = None
+        self.serialDevices: dict[str, SerialDevice] = dict()
         return 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(SerialLib, cls).__new__(cls)
         return cls.instance
 
-    def serial_open_port(self, kind, port, bard_rate):
-        """Open serial port with specified bard rate.
+    def serial_open_port(self, tag, port, bard_rate):
+        """Open a serial port.
 
+        Args:
+            tag (Str): The tag name of the serial port.
+            port (Str): The port name of the serial port.
+            bard_rate (Str): The bard rate of the serial port.
+        
         Examples:
-        | Open Serial Port | Case | "/dev/ttyUSB2" | 115200 |
-        | Open Serial Port | Left  | "/dev/ttyUSB3" | 1152000 |
-        | Open Serial Port | Right  | "/dev/ttyUSB3" | 1152000 |
+        | Serial Open Port | Case | /dev/ttyACM0 | 115200 |
         """
-        match kind:
-            case "Case":
-                Console("open Case")
-                self.case = SerialLogger(port, bard_rate)
-            case "Left":
-                Console("open Left")
-                self.left = SerialLogger(port, bard_rate)
-            case "Right":
-                Console("open Right")
-                self.right = SerialLogger(port, bard_rate)
-            case _:
-                raise Exception("Invalid kind")
-        return 
+        self.serialDevices[tag] = SerialDevice(port=port, bard_rate=bard_rate)
+        return
 
-    def serial_close_port(self, kind):
+    def serial_close_port(self, tag):
         """Close current serial port.
-
         Examples:
         | Close Serial Port | Case |
         | Close Serial Port | Left |
         | Close Serial Port | Right |
         """
-        match kind:
-            case "Case":
-                del self.case
-            case "Left":
-                del self.left
-            case "Right":
-                del self.right
-            case _:
-                raise Exception("Invalid kind")
-        return 
+        if tag in self.serialDevices:
+            del self.serialDevices[tag]
+        else:
+            raise Exception("Invalid tag")
+        return
 
-    def serial_write_str(self, kind, data):
+    def serial_write_str(self, tag, data):
         """Write string to serial port.
 
         Examples:
@@ -94,18 +93,13 @@ class SerialLib(object):
         | Serial Write String | Right | Hello, World! |
         """
         ret = 0
-        match kind:
-            case "Case":
-                ret = self.case.write_str(data) 
-            case "Left":
-                ret = self.left.write_str(data)
-            case "Right":
-                ret = self.right.write_str(data)
-            case _:
-                raise Exception("Invalid kind")
-        return ret 
+        if tag in self.serialDevices:
+            ret = self.serialDevices[tag].logger.write_str(data)
+        else:
+            raise Exception("Invalid tag")
+        return ret
     
-    def serial_write_hex(self, kind, data):
+    def serial_write_hex(self, tag, data):
         """Write hex data to serial port. 
 
         Examples:
@@ -114,18 +108,13 @@ class SerialLib(object):
         | Serial Write Hex | Right |abcdeef |
         """
         ret = 0
-        match kind:
-            case "Case":
-                ret = self.case.write_hex(data) 
-            case "Left":
-                ret = self.left.write_hex(data)
-            case "Right":
-                ret = self.right.write_hex(data)
-            case _:
-                raise Exception("Invalid kind")
-        return ret 
+        if tag in self.serialDevices:
+            ret = self.serialDevices[tag].logger.write_hex(data)
+        else:
+            raise Exception("Invalid tag")
+        return ret
 
-    def serial_read_until(self, kind, exp=None, timeout=None):
+    def serial_read_until(self, tag, exp=None, timeout=None):
         """Wait for a specific string from the serial port.
 
         This function will continuously listen for data until the expected string is received or the timeout is reached.
@@ -146,15 +135,10 @@ class SerialLib(object):
         """
         if timeout != None:
             timeout = float(timeout)
-        match kind:
-            case "Case":
-                inst = self.case
-            case "Left":
-                inst = self.left
-            case "Right":
-                inst = self.right
-            case _:
-                raise Exception("Invalid kind")
+        if tag in self.serialDevices:
+            inst = self.serialDevices[tag].logger
+        else:
+            raise Exception("Invalid tag")
         ret = None
         inst.set_read_timeout(1)
         time_cost = 0
@@ -187,7 +171,7 @@ class SerialLib(object):
         inst.clear_read_timeout()
         return ret 
 
-    def serial_read_until_regex(self, kind, patt, timeout=None):
+    def serial_read_until_regex(self, tag, patt, timeout=None):
         """Wait for string matching a given regular expression pattern.
 
         This function will continuously listen for data until data matching the specified pattern is received or the timeout is reached.
@@ -207,15 +191,10 @@ class SerialLib(object):
         """
         if timeout != None:
             timeout = float(timeout)
-        match kind:
-            case "Case":
-                inst = self.case
-            case "Left":
-                inst = self.left
-            case "Right":
-                inst = self.right
-            case _:
-                raise Exception("Invalid kind")
+        if tag in self.serialDevices:
+            inst = self.serialDevices[tag].logger
+        else:
+            raise Exception("Invalid tag")
         ret = None
         inst.set_read_timeout(1)
         time_cost = 0
@@ -244,7 +223,7 @@ class SerialLib(object):
         inst.clear_read_timeout()
         return ret 
 
-    def serial_parallel_read_until(self, kind, exp, timeout=None):
+    def serial_parallel_read_until(self, tag, exp, timeout=None):
         """Register a read event, this event is pushed to a queue but not executed.
 
         Examples:
@@ -281,32 +260,18 @@ class SerialLib(object):
                 if all( i.is_timeouted or i.is_matched for i in waiting_list):
                     break
             serial_inst.clear_read_timeout()
-        match kind:
-            case "Case":
-                if self.case_waiting_thread is None:
-                    self.case_waiting_thread = threading.Thread(target = parallel_read_until, args = (self.case, self.case_waiting_list))      
-                one = CondRead()
-                one.expected = exp 
-                one.timeout = timeout 
-                self.case_waiting_list.append(one)
-            case "Left":
-                if self.left_waiting_thread is None:
-                    self.left_waiting_thread = threading.Thread(target = parallel_read_until, args = (self.left, self.left_waiting_list))      
-                one = CondRead()
-                one.expected = exp 
-                one.timeout = timeout 
-                self.left_waiting_list.append(one)
-            case "Right":
-                if self.right_waiting_thread is None:
-                    self.right_waiting_thread = threading.Thread(target = parallel_read_until, args = (self.right, self.right_waiting_list))      
-                one = CondRead()
-                one.expected = exp 
-                one.timeout = timeout 
-                self.right_waiting_list.append(one)
-            case _:
-                raise Exception("Invalid kind")
+        if tag in self.serialDevices:
+            serialDev = self.serialDevices[tag]
+            if serialDev.waiting_thread is None:
+                serialDev.waiting_thread = threading.Thread(target = parallel_read_until, args = (serialDev.logger, serialDev.waiting_list))
+            one = CondRead()
+            one.expected = exp
+            one.timeout = timeout
+            serialDev.waiting_list.append(one)
+        else:
+            raise Exception("Invalid tag")
     
-    def serial_parallel_read_until_regex(self, kind, patt, timeout=None):
+    def serial_parallel_read_until_regex(self, tag, patt, timeout=None):
         """Register a read event, this event is pushed to a queue but not executed.
 
         Examples:
@@ -343,32 +308,18 @@ class SerialLib(object):
                 if all( i.is_timeouted or i.is_matched for i in waiting_list):
                     break
             serial_inst.clear_read_timeout()
-        match kind:
-            case "Case":
-                if self.case_waiting_thread is None:
-                    self.case_waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (self.case, self.case_waiting_list))      
-                one = CondRead()
-                one.expected = patt 
-                one.timeout = timeout 
-                self.case_waiting_list.append(one)
-            case "Left":
-                if self.left_waiting_thread is None:
-                    self.left_waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (self.left, self.left_waiting_list))      
-                one = CondRead()
-                one.expected = patt
-                one.timeout = timeout 
-                self.left_waiting_list.append(one)
-            case "Right":
-                if self.right_waiting_thread is None:
-                    self.right_waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (self.right, self.right_waiting_list))      
-                one = CondRead()
-                one.expected = patt
-                one.timeout = timeout 
-                self.right_waiting_list.append(one)
-            case _:
-                raise Exception("Invalid kind")
+        if tag in self.serialDevices:
+            serialDev = self.serialDevices[tag]
+            if serialDev.waiting_thread is None:
+                serialDev.waiting_thread = threading.Thread(target = parallel_read_until_regex, args = (serialDev.logger, serialDev.waiting_list))
+            one = CondRead()
+            one.expected = patt
+            one.timeout = timeout
+            serialDev.waiting_list.append(one)
+        else:
+            raise Exception("Invalid tag")
         
-    def serial_parallel_wait(self, kind_list):
+    def serial_parallel_wait(self, tag_list):
         """Execute all read event in parallel and wait complete 
 
         Examples:
@@ -378,26 +329,21 @@ class SerialLib(object):
         | ${ret}= | Serial Parallel Wait | Case Left Right |
         """
         total = []
-        total += [self.case_waiting_thread] if self.case_waiting_thread else [] 
-        total += [self.left_waiting_thread] if self.left_waiting_thread else [] 
-        total += [self.right_waiting_thread] if self.right_waiting_thread else [] 
+        if set(tag_list) - set(self.serialDevices.tags()):
+            raise Exception("Invalid tag")
+        else:
+            for i in tag_list:
+                total += [self.serialDevices[i].waiting_thread] if self.serialDevices[i].waiting_thread else []
         
-        results = {"Case": list(), "Left": list(), "Right": list()}
+        results = {i:[] for i in tag_list}
         
         for i in total:
             i.start()
         for i in total:
             i.join()
-        
-        if "Case" in kind_list:
-            for i in self.case_waiting_list:
-                results["Case"].append(i.result)
-        if "Left" in kind_list:
-            for i in self.left_waiting_list:
-                results["Left"].append(i.result)
-        if "Right" in kind_list:
-            for i in self.right_waiting_list:
-                results["Right"].append(i.result)
+
+        for i in tag_list:
+                results[i].append(j.result for j in self.serialDevices[i].waiting_list)
         return results 
 
 class SerialLogger(object):
