@@ -1,3 +1,4 @@
+import os
 from typing import SupportsInt
 import serial
 import datetime 
@@ -348,7 +349,15 @@ class SerialLib(object):
 
 class SerialLogger(object):
     def __init__(self, port, bard_rate):
-        self.logs = []
+        # create log file to record all serial data
+        self.created_time = datetime.datetime.now().strftime('%02H-%02M-%02S')
+        pwd = os.path.dirname(os.path.abspath(__file__))
+        serial_log_dir = os.path.join(os.path.dirname(pwd), "serial_logs")
+        if os.path.exists(serial_log_dir) == False:
+            os.mkdir(serial_log_dir)
+        self.log_file = os.path.join(serial_log_dir, f"{self.created_time}-{port}.txt".replace('/dev/', ''))
+        self.f_handler = open(self.log_file, "a", buffering=1)
+
         self.serial = serial.Serial(port, bard_rate)
         self.cnt = 0
         return 
@@ -358,6 +367,8 @@ class SerialLogger(object):
         if self.serial.is_open:
             self.serial.close()
         print("Serial Exit")
+        self.f_handler.close()
+        print("Logfile Closed")
 
     def readline(self) -> str|None:
         line = ""
@@ -376,6 +387,10 @@ class SerialLogger(object):
                 else:
                     line = None 
                     break
+        timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')[:-3]
+        if line:
+            log_entry = f"[{timestamp}] {line}"
+            self.f_handler.write(log_entry+"\n")
         print("Rd",self.cnt, line)
         if not line is None:
             self.cnt = self.cnt + 1
@@ -395,10 +410,8 @@ class SerialLogger(object):
     def clear_read_timeout(self):
         self.serial.timeout = None
 
-# if __name__ == "__main__":
-#     sl = SerialLib()
-#     sl.serial_open_port("Case", "/dev/ttyACM0", 115200)
-#     print(sl.serial_read_until("Case", "charge", timeout=8))
-#     sl.serial_parallel_read_until("Case", "charge", timeout=8)
-#     sl.serial_parallel_read_until("Case", "charge", timeout=3)
-#     print(sl.serial_parallel_wait("Case"))
+if __name__ == "__main__":
+    sl = SerialLib()
+    sl.serial_open_port("Case", "/dev/ttyUSB0", 1152000)
+    print(sl.serial_read_until("Case", "U-U", timeout=30))
+    print(sl.serial_parallel_wait("Case"))

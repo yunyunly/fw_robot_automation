@@ -5,3 +5,4 @@ report.html
 output.xml
 .vscode
 .mypy_cache
+serial_logs/*
