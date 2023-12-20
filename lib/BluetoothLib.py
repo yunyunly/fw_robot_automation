@@ -79,6 +79,7 @@ class BluetoothLib(object):
 
     Do not suggest you use its any API in test cases, you should use HearingAidsLib or ChargingCaseLib.
     """
+    ROBOT_LIBRARY_SCOPE = 'SUITE'
     charging_case_header = 9
     hci_id = 0
     case_addr:str 

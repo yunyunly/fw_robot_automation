@@ -50,6 +50,7 @@ class SerialLib(object):
     port: /dev/ttyACM0
     bard rate: 115200 
     """
+    ROBOT_LIBRARY_SCOPE = 'SUITE'
     def __init__(self):
         self.serialDevices: dict[str, SerialDevice] = dict()
         return 

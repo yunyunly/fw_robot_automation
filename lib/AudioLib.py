@@ -13,6 +13,7 @@ class AudioLib(object):
     """
     RPI Audio Control 
     """
+    ROBOT_LIBRARY_SCOPE = 'SUITE'
     def __init__(self):
         self.id_list = []
         return 

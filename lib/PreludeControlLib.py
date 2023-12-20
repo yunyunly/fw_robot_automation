@@ -8,6 +8,7 @@ Debug = robot.api.logger.debug
 Info = robot.api.logger.info 
 
 class PreludeControlLib:
+    ROBOT_LIBRARY_SCOPE = 'SUITE'
     def __init__(self):
         self.RESET1 = 0x01
         self.RESET2 = 0x02

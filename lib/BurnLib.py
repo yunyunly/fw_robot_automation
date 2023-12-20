@@ -10,6 +10,7 @@ Debug = robot.api.logger.debug
 Info = robot.api.logger.info 
 
 class BurnLib:
+    ROBOT_LIBRARY_SCOPE = 'SUITE'
     def __init__(self, burn_tool_path=None):
         self.burning:dict = {"l":False, "r":False, "c":False}
         self.burn_process:dict = {"l":None, "r":None, "c":None}
