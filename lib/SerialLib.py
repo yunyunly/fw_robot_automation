@@ -345,7 +345,44 @@ class SerialLib(object):
             i.join()
 
         for i in tag_list:
-                results[i].append(j.result for j in self.serialDevices[i].waiting_list)
+            for j in self.serialDevices[i].waiting_list:
+                results[i].append(j.result)
+        return results 
+           
+    def serial_parallel_read_start(self, tag_list):
+        if set(tag_list) - set(self.serialDevices.keys()):
+            raise Exception("Invalid tag")
+        else:
+            for i in tag_list:
+                self.serialDevices[i].waiting_thread.start() if self.serialDevices[i].waiting_thread else None
+
+    
+    def serial_parallel_read_wait(self, tag_list):
+        """Execute all read event in parallel and wait complete 
+
+        Examples:
+        | ${ret}= | Serial Parallel Wait | Case |
+        | ${ret}= | Serial Parallel Wait | Left |
+        | ${ret}= | Serial Parallel Wait | Left Right |
+        | ${ret}= | Serial Parallel Wait | Case Left Right |
+        """
+        total = []
+        if set(tag_list) - set(self.serialDevices.keys()):
+            raise Exception("Invalid tag")
+        else:
+            for i in tag_list:
+                total += [self.serialDevices[i].waiting_thread] if self.serialDevices[i].waiting_thread else []
+        
+        results = {i:[] for i in tag_list}
+        
+        for i in total:
+            i.join()
+
+        for i in tag_list:
+            for j in self.serialDevices[i].waiting_list:
+                results[i].append(j.result)
+            self.serialDevices[i].waiting_thread = None
+            self.serialDevices[i].waiting_list = [] 
         return results 
 
 class SerialLogger(object):
@@ -375,10 +412,10 @@ class SerialLogger(object):
         line = ""
         if self.serial.timeout is None:
             while line == "":
-                line = self.serial.readline().decode(ENCODE).strip()
+                line = self.serial.read(64*1024).decode(ENCODE).strip()
         else:
             while True:
-                line_without_strip = self.serial.readline().decode(ENCODE) 
+                line_without_strip = self.serial.read(64*1024).decode(ENCODE) 
                 if line_without_strip != "":
                     line = line_without_strip.strip()
                     if line == "":

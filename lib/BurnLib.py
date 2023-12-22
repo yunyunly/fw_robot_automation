@@ -26,6 +26,9 @@ class BurnLib:
         self.echo_tool_path = os.path.join(self.burn_tool_path, "echo")
         self.prelude = None
         
+    def __del__(self):
+        self.prelude.close_ftdi()
+
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(BurnLib, cls).__new__(cls)
@@ -39,7 +42,7 @@ class BurnLib:
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         return ansi_escape.sub('', text)
         
-    def __prelude_handshake(self, device, prelude_id:str="1"):
+    def __prelude_handshake(self, device, prelude_id:str="1",factory_mode:bool=False):
         """ Handshake with prelude.
             Args:
                 device: device to burn, 'l' or 'r'
@@ -51,9 +54,10 @@ class BurnLib:
         time.sleep(0.5)
         self.prelude.charge("on", device)
         time.sleep(0.2)
-        self.prelude.reset("on", device)
-        time.sleep(0.5)
-        self.prelude.reset("off", device)
+        if factory_mode:
+            self.prelude.reset("on", device)
+            time.sleep(0.5)
+            self.prelude.reset("off", device)
 
     def __burn_one_side(self, device:str, programmer:str, filename:str, bootloader:str, factory_section_bin:str, erase_chip:bool):
         """ Burn one side of orka device.
@@ -89,6 +93,7 @@ class BurnLib:
     def burn_orka(
         self,
         prelude_id: str="1",
+        factory_mode: bool=False,
         device:str="lr",
         programmer:str="programmer1600.bin",
         filename:str="best1600_tws.bin",
@@ -127,7 +132,7 @@ class BurnLib:
             )
             Info(f"Waiting for {d.upper()} prelude handshake...")
             time.sleep(1)
-            self.__prelude_handshake(d,prelude_id=prelude_id)
+            self.__prelude_handshake(d,prelude_id=prelude_id,factory_mode=factory_mode)
             Info(f"{d.upper()} prelude handshake done.")
 
         self.return_code["l"] = None
