@@ -347,6 +347,8 @@ class SerialLib(object):
         for i in tag_list:
             for j in self.serialDevices[i].waiting_list:
                 results[i].append(j.result)
+            self.serialDevices[i].waiting_thread = None
+            self.serialDevices[i].waiting_list = []
         return results 
            
     def serial_parallel_read_start(self, tag_list):
