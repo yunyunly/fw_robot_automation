@@ -323,6 +323,7 @@ class SerialLib(object):
         
     def serial_parallel_wait(self, tag_list):
         """Execute all read event in parallel and wait complete 
+        Input all the target tags in a string and seperated by a space.
 
         Examples:
         | ${ret}= | Serial Parallel Wait | Case |
@@ -330,6 +331,12 @@ class SerialLib(object):
         | ${ret}= | Serial Parallel Wait | Left Right |
         | ${ret}= | Serial Parallel Wait | Case Left Right |
         """
+        if type(tag_list) is str:
+            tag_list = tag_list.split()
+        elif type(tag_list) is list:
+            pass
+        else:
+            print("serial_parallel_wait: invalid tags type ", type(tag_list))
         total = []
         if set(tag_list) - set(self.serialDevices.keys()):
             raise Exception("Invalid tag")
