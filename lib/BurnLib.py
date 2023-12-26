@@ -4,6 +4,7 @@ import time
 import subprocess
 import PreludeControlLib
 import robot.api.logger
+import pty
 
 Console = robot.api.logger.console 
 Debug = robot.api.logger.debug 
@@ -25,6 +26,7 @@ class BurnLib:
         self.orka_tool_path = os.path.join(self.burn_tool_path, "dldtool")
         self.echo_tool_path = os.path.join(self.burn_tool_path, "echo")
         self.prelude = None
+        self.master,self.slave = pty.openpty()
         
     def __del__(self):
         self.prelude.close_ftdi()
@@ -83,7 +85,7 @@ class BurnLib:
         _burn_command.append(f"{os.path.join(self.orka_tool_path, bootloader)}")
         _burn_command.append(f"{os.path.join(self.orka_tool_path, factory_section_bin)}")
         Info(f"Burn command({device}): {' '.join(_burn_command)}")
-        self.burn_process[device] = subprocess.Popen(' '.join(_burn_command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        self.burn_process[device] = subprocess.Popen(' '.join(_burn_command), stdin=self.slave, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         self.burning[device] = True
     
     def update_ha_port(self, port_left:str="/dev/ttyUSB2", port_right:str="/dev/ttyUSB3"):
