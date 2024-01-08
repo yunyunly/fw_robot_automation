@@ -29,7 +29,8 @@ class BurnLib:
         self.master,self.slave = pty.openpty()
         
     def __del__(self):
-        self.prelude.close_ftdi()
+        if self.prelude:
+            self.prelude.close_ftdi()
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -44,7 +45,7 @@ class BurnLib:
         ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         return ansi_escape.sub('', text)
         
-    def __prelude_handshake(self, device, prelude_id:str="1",factory_mode:bool=False):
+    def __prelude_handshake(self, device, prelude_id:str="1"):
         """ Handshake with prelude.
             Args:
                 device: device to burn, 'l' or 'r'
@@ -52,14 +53,16 @@ class BurnLib:
         if self.prelude is None:
             self.prelude = PreludeControlLib.PreludeControlLib()
             self.prelude.open_device(prelude_id)
+        self.prelude.reset("off", device)
+        time.sleep(0.5)
+        self.prelude.reset("on", device)
+        time.sleep(0.5)
+        self.prelude.reset("off", device)
+        time.sleep(0.5)
         self.prelude.charge("off", device)
         time.sleep(0.5)
         self.prelude.charge("on", device)
         time.sleep(0.2)
-        if factory_mode:
-            self.prelude.reset("on", device)
-            time.sleep(0.5)
-            self.prelude.reset("off", device)
 
     def __burn_one_side(self, device:str, programmer:str, filename:str, bootloader:str, factory_section_bin:str, erase_chip:bool):
         """ Burn one side of orka device.
@@ -95,7 +98,6 @@ class BurnLib:
     def burn_orka(
         self,
         prelude_id: str="1",
-        factory_mode: bool=False,
         device:str="lr",
         programmer:str="programmer1600.bin",
         filename:str="best1600_tws.bin",
@@ -122,7 +124,10 @@ class BurnLib:
             self.prelude.open_device(prelude_id)
         if "l" not in device and "r" not in device:
             raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
-
+        self.prelude.charge("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("on", device)
+        time.sleep(3)
         for d in device:
             self.__burn_one_side(
                 device=d,
@@ -134,7 +139,7 @@ class BurnLib:
             )
             Info(f"Waiting for {d.upper()} prelude handshake...")
             time.sleep(1)
-            self.__prelude_handshake(d,prelude_id=prelude_id,factory_mode=factory_mode)
+            self.__prelude_handshake(d,prelude_id=prelude_id)
             Info(f"{d.upper()} prelude handshake done.")
 
         self.return_code["l"] = None

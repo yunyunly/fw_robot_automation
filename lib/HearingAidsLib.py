@@ -41,6 +41,9 @@ class HearingAidsLib:
         self.blue = BluetoothLib()
         print("HearingAid Inited")
         return 
+    
+    def __del__(self):
+        del self.blue
 
     def connect_hearing_aids(self, addr):
         """Connect To hearing aid before you send any message to it.  
@@ -48,8 +51,8 @@ class HearingAidsLib:
         Examples:
         | Connect Hearing Aid | D0:14:11:20:20:18 |
         """
-        self.blue.ble_connect_hearing_aids(addr)
-        return 
+        return self.blue.ble_connect_hearing_aids(addr)
+        #return 
     
     def connect_hearing_aids_classic(self, addr):
         """Connect To hearing aid classic bluetooth to access media point.  
@@ -57,8 +60,8 @@ class HearingAidsLib:
         Examples:
         | Connect Hearing Aid Classic | D0:14:11:20:20:18 |
         """
-        self.blue.bt_connect_hearing_aids(addr)
-        return 
+        return self.blue.bt_connect_hearing_aids(addr)
+        #return 
     
     def disconnect_hearing_aids(self, addr):
         """Disconnect To hearing aids, both le and classic.  

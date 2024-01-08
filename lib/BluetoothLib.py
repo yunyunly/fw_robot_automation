@@ -123,6 +123,10 @@ class BluetoothLib(object):
         dev_obj = self.bus.get_object("org.bluez", dev_path)
         try:
             print("connecting...")
+            dev_itf = dbus.Interface(dev_obj, 'org.freedesktop.DBus.Properties')
+            dev_itf.Set('org.bluez.Device1', 'Trusted', dbus.Boolean(True))
+            time.sleep(2)
+            Console("device trusted status: "+str(dev_itf.Get('org.bluez.Device1', 'Trusted')))
             dev_obj.Connect(dbus_interface="org.bluez.Device1")
         except:
             try: 
@@ -172,7 +176,6 @@ class BluetoothLib(object):
         try:
             filter = dict()
             filter.update({"Transport" :  "le"})
-            filter.update({"Pattern" :  devaddr})
             self.adapter_obj.SetDiscoveryFilter(filter, dbus_interface="org.bluez.Adapter1")
             self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
         except:
@@ -374,6 +377,16 @@ class BluetoothLib(object):
         except dbus.DBusException as e:
             print(e)
             return False
+        
+    def addr_remove_colon(self,dev_addr:str):
+        """given a colon seperated bluetooth addres, return a string of the address without colon"""
+        ble_address_without_colons = dev_addr.replace(':', '')
+        return ble_address_without_colons
+    
+    def addr_insert_colon(self,dev_addr:str):
+        """given a bluetooth adddress string without colon, return the address with colon seperation"""
+        ble_address_with_colons = ':'.join([dev_addr[i:i+2] for i in range(0, len(dev_addr), 2)])
+        return ble_address_with_colons
       
 # if __name__ == "__main__":
 #     ble = BluetoothLib()

@@ -4,6 +4,7 @@ import os
 import dbus 
 import robot.api.logger 
 import subprocess
+import signal
 
 Console = robot.api.logger.console 
 Debug = robot.api.logger.debug 
@@ -82,7 +83,7 @@ class AudioLib(object):
         """
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
-        return self.audio_play_audio("/home/firmware/audio/Big Band.wav", timeout) 
+        return self.audio_play_audio("~/audio/Big Band.wav", timeout) 
 
     def audio_play_audio(self, filepath:str, timeout=None):
         """Examples:
@@ -101,6 +102,54 @@ class AudioLib(object):
             ret = -1
         return ret
 
+    def audio_start_play_audio(self, filepath:str):
+        """Examples:
+         | Audio Start Play Audio |
+         | ${pid}=    | Audio Start Play Audio |
+        """
+        if len(self.id_list)==0 :
+            raise Exception("No Device Id Found")
+
+        command=f"pactl set-card-profile {str(self.id_list[0])} a2dp_sink && paplay {filepath}"
+        process_id = 0
+        try:
+            process = subprocess.Popen(command, shell=True,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process_id = process.pid
+        except:
+           process_id=-1 
+        return process_id
+
+
+    def audio_start_play_hfp(self, filepath:str):
+        """Examples:
+         | Audio Start Play Audio |
+         | ${pid}=    | Audio Start Play Audio |
+        """
+        if len(self.id_list)==0 :
+            raise Exception("No Device Id Found")
+
+        command=f"pactl set-card-profile {str(self.id_list[0])} headset_head_unit && paplay {filepath}"
+        process_id = 0
+        try:
+            process = subprocess.Popen(command, shell=True,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process_id = process.pid
+        except:
+           process_id=-1 
+        return process_id
+       
+    def audio_stop_play_audio(self, pid):
+        """Examples:
+         | Audio Stop Play Audio | pid
+         | ${ret}=    | Audio Stop Play Audio | pid
+        """
+        Console(f"Process ID stop: {pid}")
+        if len(self.id_list)==0 :
+            raise Exception("No Device Id Found")
+        os.kill(pid, signal.SIGTERM)
+        time.sleep(3)
+        #block until end 
+        ret_pid,status = os.waitpid(pid,0)
+        return ret_pid==pid
 
 # if __name__ == "__main__":
 #     a = AudioLib()

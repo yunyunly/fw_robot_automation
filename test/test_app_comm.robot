@@ -7,16 +7,16 @@ Test Teardown     Serial Disconnect LR
 Library           ../lib/HearingAidsLib.py
 Library           ../lib/SerialLib.py
 Library    OperatingSystem
-Resource    ../core/util.resource
+Resource    ../resource/util.resource
 
 *** Keywords ***
 serial connnect lr
-    Serial Open Port    Left    /dev/ttyUSB2    1152000
-    Serial Open Port    Right    /dev/ttyUSB3    1152000
+    Serial Open Left    /dev/ttyUSB2    1152000
+    Serial Open Right    /dev/ttyUSB3    1152000
 
 serial disconnect lr
-    Serial Close Left
-    Serial Close Right
+    Serial Close Port    Left
+    Serial Close Port    Right
 
 *** Test Cases ***
 
