@@ -48,10 +48,10 @@ class ChargingCaseLib:
         | Connect Charging Case | D0:14:11:20:20:18 |
         """
         Logger.info("Call Blue Connect Case")
-        self.blue.ble_connect_case(addr)
-        return 
+        return  self.blue.ble_connect_case(addr)
+        
 
-    def disconnect_charging_case(self):
+    def disconnect_charging_case(self,addr):
         """Disconnect charging case.  
         
         Examples:

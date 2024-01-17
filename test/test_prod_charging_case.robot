@@ -28,6 +28,7 @@ ${HA_BT_ADDR}     12:34:56:78:A0:B3    # 助听器BT地址
 ${HA_L_TTY_PORT}    /dev/ttyUSB3    # 助听器左耳串口端口
 ${HA_R_TTY_PORT}    /dev/ttyUSB4    # 助听器右耳串口端口
 ${HA_TTY_BAUDRATE}    1152000    # 助听器串口波特率
+${PRELUDE_ID}    2
 
 *** Test Cases ***
 Remark
@@ -248,7 +249,7 @@ Case pairing success
     ${res}=    Read Case    Led: tws pairing
     Should Be True    ${res}    Case should log pairing start 
     ${res}=    Bt Connect Hearing Aids	  ${HA_BT_ADDR}
-    Should Be True    ${res}    Bt should connect ha
+        Should Be True    ${res}    Bt should connect ha
     ${res}=    Read Case    Led: tws pairing success    ${20}
     Should Be True    ${res}    Case should log pairing success
 
@@ -282,7 +283,7 @@ Case pairing timeout
 
 *** Keywords ***
 Setup
-    Open Device
+    Open Device    ${PRELUDE_ID} 
     Charge    off
     PreludeControlLib.Reset    off
     Serial Open Port    Case    ${CC_TTY_PORT}    ${CC_TTY_BAUDRATE}

@@ -102,6 +102,18 @@ class BluetoothLib(object):
             print('Bluetooth Lib Exit')
         except Exception as e:
             print(e)
+            
+    def init(self):
+        """
+            Temp palceholder for new ble lib
+        """
+        return
+    
+    def quit(self):
+        """
+            Temp palceholder for new ble lib
+        """
+        return
     
     def connect(self, addr="D0:14:11:20:20:18"):
         """Connect Device via bluetoothctl
