@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 from typing import SupportsInt
 import serial
@@ -8,7 +9,7 @@ import threading
 import asyncio
 from uuid import uuid4 
 import robot.api.logger 
- 
+from multiprocessing import Process 
 
 Console = robot.api.logger.console 
 
@@ -22,6 +23,14 @@ class CondRead:
         self.is_matched = False
         self.is_timeouted = False 
 
+class LogEntry(object):
+    def __init__(self):
+        self.ts = None 
+        self.val = None
+    def __init__(self, ts, val):
+        self.ts = ts 
+        self.val = val 
+
 class SerialDevice(object):
     """each serial port created matches one SerialDevice
 
@@ -31,7 +40,6 @@ class SerialDevice(object):
     - waiting_thread: a thread to execute all read event in waiting_list
         
     """
-
     def __init__(self, port, bard_rate):
         self.logger: SerialLogger = SerialLogger(port, bard_rate)
         self.waiting_list = []
@@ -70,7 +78,11 @@ class SerialLib(object):
         Examples:
         | Serial Open Port | Case | /dev/ttyACM0 | 115200 |
         """
+        print("open port", tag, port, bard_rate)
+        if tag in self.serialDevices:
+            self.serial_close_port(tag)
         self.serialDevices[tag] = SerialDevice(port=port, bard_rate=bard_rate)
+        print("open port done", tag)
         return
 
     def serial_close_port(self, tag):
@@ -80,10 +92,12 @@ class SerialLib(object):
         | Close Serial Port | Left |
         | Close Serial Port | Right |
         """
-        if tag in self.serialDevices:
-            del self.serialDevices[tag]
-        else:
-            raise Exception("Invalid tag")
+        print("close port", tag)
+        item = self.serialDevices.pop(tag)
+        if item is None:
+            raise Exception(f'Try to close a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
+        del item 
+        print("close port done", tag)
         return
 
     def serial_write_str(self, tag, data):
@@ -98,7 +112,7 @@ class SerialLib(object):
         if tag in self.serialDevices:
             ret = self.serialDevices[tag].logger.write_str(data)
         else:
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to write data to a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
         return ret
     
     def serial_write_hex(self, tag, data):
@@ -113,7 +127,7 @@ class SerialLib(object):
         if tag in self.serialDevices:
             ret = self.serialDevices[tag].logger.write_hex(data)
         else:
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to write data to a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
         return ret
 
     def serial_read_until(self, tag, exp=None, timeout=None):
@@ -140,9 +154,8 @@ class SerialLib(object):
         if tag in self.serialDevices:
             inst = self.serialDevices[tag].logger
         else:
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to read data to a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
         ret = None
-        inst.set_read_timeout(1)
         time_cost = 0
         while True:
             pretime = time.time()
@@ -170,7 +183,6 @@ class SerialLib(object):
                 continue
             if time_cost >= timeout:
                 break
-        inst.clear_read_timeout()
         return ret 
 
     def serial_read_until_regex(self, tag, patt, timeout=None):
@@ -196,9 +208,8 @@ class SerialLib(object):
         if tag in self.serialDevices:
             inst = self.serialDevices[tag].logger
         else:
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to read data to a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
         ret = None
-        inst.set_read_timeout(1)
         time_cost = 0
         while True:
             pretime = time.time()
@@ -222,7 +233,6 @@ class SerialLib(object):
                 continue
             if time_cost >= timeout:
                 break
-        inst.clear_read_timeout()
         return ret 
 
     def serial_parallel_read_until(self, tag, exp, timeout=None):
@@ -235,14 +245,12 @@ class SerialLib(object):
         """
         def parallel_read_until(serial_inst, waiting_list):
             ret = None
-            serial_inst.set_read_timeout(1)
             time_cost = 0
             while True:
                 pretime = time.time()
                 line = serial_inst.readline()
                 postime = time.time()
                 time_cost = time_cost + (postime - pretime)
-                #print("time cost", time_cost)
                 for i in waiting_list:
                     if i.is_matched or i.is_timeouted:
                         continue 
@@ -261,7 +269,6 @@ class SerialLib(object):
                         continue
                 if all( i.is_timeouted or i.is_matched for i in waiting_list):
                     break
-            serial_inst.clear_read_timeout()
         if tag in self.serialDevices:
             serialDev = self.serialDevices[tag]
             if serialDev.waiting_thread is None:
@@ -271,7 +278,7 @@ class SerialLib(object):
             one.timeout = timeout
             serialDev.waiting_list.append(one)
         else:
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to assign a parallel read task to a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
     
     def serial_parallel_read_until_regex(self, tag, patt, timeout=None):
         """Register a read event, this event is pushed to a queue but not executed.
@@ -283,14 +290,12 @@ class SerialLib(object):
         """
         def parallel_read_until_regex(serial_inst, waiting_list):
             ret = None
-            serial_inst.set_read_timeout(1)
             time_cost = 0
             while True:
                 pretime = time.time()
                 line = serial_inst.readline()
                 postime = time.time()
                 time_cost = time_cost + (postime - pretime)
-                #print("time cost", time_cost)
                 for i in waiting_list:
                     if i.is_matched or i.is_timeouted:
                         continue 
@@ -309,7 +314,6 @@ class SerialLib(object):
                         continue
                 if all( i.is_timeouted or i.is_matched for i in waiting_list):
                     break
-            serial_inst.clear_read_timeout()
         if tag in self.serialDevices:
             serialDev = self.serialDevices[tag]
             if serialDev.waiting_thread is None:
@@ -319,7 +323,7 @@ class SerialLib(object):
             one.timeout = timeout
             serialDev.waiting_list.append(one)
         else:
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to assign a parallel read task to a port with invalid tag {tag}, possible tags are {self.serialDevices.keys()}')
         
     def serial_parallel_wait(self, tag_list):
         """Execute all read event in parallel and wait complete 
@@ -336,10 +340,10 @@ class SerialLib(object):
         elif type(tag_list) is list:
             pass
         else:
-            print("serial_parallel_wait: invalid tags type ", type(tag_list))
+            raise Exception(f'Invalid type of tags, should be str or list[str]')
         total = []
         if set(tag_list) - set(self.serialDevices.keys()):
-            raise Exception("Invalid tag")
+            raise Exception(f'Try to parallelly read data to ports with invalid tag {tag_list}, possible tags are {self.serialDevices.keys()}')
         else:
             for i in tag_list:
                 total += [self.serialDevices[i].waiting_thread] if self.serialDevices[i].waiting_thread else []
@@ -394,71 +398,144 @@ class SerialLib(object):
             self.serialDevices[i].waiting_list = [] 
         return results 
 
+
+class SerialFetcher(threading.Thread):
+    def __init__(self, port, rate, log_path, log_cache):
+        print("    to construct", self.__class__.__name__)
+        super(SerialFetcher, self).__init__()
+        self._stop_event = threading.Event()
+        self._stop_event.clear()
+        self.port = port
+        self.rate = rate
+        self.path = log_path
+        self.cache = log_cache
+        self.serial: serial.Serial
+        self._run_event = threading.Event()
+        self._run_event.clear()
+        print("    done construct", self.__class__.__name__)
+    
+    def get_serial(self):
+        return self.serial
+
+    def stop(self):
+        print("    notify stop", self.__class__.__name__)
+        self._stop_event.set()
+    
+    def stopped(self):
+        return self._stop_event.is_set()
+    
+    def wait_until_running(self):
+        self._run_event.wait()
+        self._run_event.clear()
+
+    def run(self):
+        print("    to run", self.__class__.__name__)
+        with (
+            serial.Serial(self.port, self.rate) as self.serial, 
+            open(self.path, 'a', buffering=1000) as log
+        ):
+            print(f'    to loop at time {datetime.datetime.now().strftime("%02H:%02M:%02S.%f")[:-3]}')
+            self.serial.timeout = 0.5
+            lines = []
+            rest = ''
+            self._run_event.set()
+            while True:
+                if self.stopped():
+                    print("    stop notified")
+                    self._stop_event.clear()
+                    break
+                if self.serial.readable():
+                    print("in waiting", self.serial.in_waiting)
+                    data = self.serial.read(self.serial.in_waiting or 1)
+                    if data:
+                        mess = data.decode(ENCODE)
+                        mess = rest + mess 
+                        if mess.find('\n') == -1:
+                            rest = mess 
+                            continue 
+                        lines = mess.split('\n')
+                        if mess.endswith('\n'):
+                            rest = ''
+                        else:
+                            rest = lines.pop() if len(lines) > 0 else ''
+                        if len(lines) > 0:
+                            lines = [x.strip() for x in lines if x.strip()]
+                            log_entries = [LogEntry(datetime.datetime.now().strftime('%02H:%02M:%02S.%f')[:-3], line) for line in lines]
+                            self.cache.extend(log_entries)
+                            for log_entry in log_entries:
+                                log.write(f'[{log_entry.ts}] {log_entry.val}\n')
+                        lines = list()
+                else:
+                    time.sleep(self.serial.timeout)
+        if not self.serial is None:               
+            if not self.serial.closed:
+                self.serial.close()
+        if not log is None:
+            if not log.closed:
+                log.close()
+        print("    done run", self.__class__.__name__)
+
 class SerialLogger(object):
+
     def __init__(self, port, bard_rate):
-        # create log file to record all serial data
-        self.created_time = datetime.datetime.now().strftime('%02H-%02M-%02S')
+        print("  to construct", self.__class__.__name__)
+        created_time = datetime.datetime.now().strftime('%02H-%02M-%02S')
         pwd = os.path.dirname(os.path.abspath(__file__))
         serial_log_dir = os.path.join(os.path.dirname(pwd), "serial_logs")
         if os.path.exists(serial_log_dir) == False:
             os.mkdir(serial_log_dir)
-        self.log_file = os.path.join(serial_log_dir, f"{self.created_time}-{port}.txt".replace('/dev/', ''))
-        self.f_handler = open(self.log_file, "a", buffering=1)
-
-        self.serial = serial.Serial(port, bard_rate)
-        self.cnt = 0
+        
+        log_file = os.path.join(serial_log_dir, f"{created_time}-{port}.txt".replace('/dev/', ''))
+        
+        self.cache = []
+        self.fetcher = SerialFetcher(port, bard_rate, log_file, self.cache)
+        self.next = 0
+        self.fetcher.start()
+        self.fetcher.wait_until_running()
+        print("  done construct", self.__class__.__name__)
         return 
     
     def __del__(self):
-        self.serial.cancel_read()
-        if self.serial.is_open:
-            self.serial.close()
-        print("Serial Exit")
-        self.f_handler.close()
-        print("Logfile Closed")
-
+        print("  to destory", self.__class__.__name__)
+        self.fetcher.stop()
+        self.fetcher.join()
+        print("  done destory", self.__class__.__name__)
+    
     def readline(self) -> str|None:
-        line = ""
-        if self.serial.timeout is None:
-            while line == "":
-                line = self.serial.read(64*1024).decode(ENCODE).strip()
+        ret = None
+        if self.next < len(self.cache):
+            ret = self.cache[self.next].val 
+            self.next = self.next + 1 
         else:
-            while True:
-                line_without_strip = self.serial.read(64*1024).decode(ENCODE) 
-                if line_without_strip != "":
-                    line = line_without_strip.strip()
-                    if line == "":
-                        continue
-                    else:
-                        break 
-                else:
-                    line = None 
-                    break
-        timestamp = datetime.datetime.now().strftime('%02H:%02M:%02S.%f')[:-3]
-        if line:
-            log_entry = f"[{timestamp}] {line}"
-            self.f_handler.write(log_entry+"\n")
-        print("Rd",self.cnt, line)
-        if not line is None:
-            self.cnt = self.cnt + 1
-        return line 
+            time.sleep(0.2)
+        return ret 
 
     def write_str(self, data):
-            data_bytes = data.encode()
-            self.serial.write(data_bytes)
+        print("  to write_str", data)
+        data_bytes = data.encode()
+        while not self.fetcher.get_serial().writable():
+            time.sleep(0.2)
+        self.fetcher.get_serial().write(data_bytes)
+        print("  done write_str")
 
     def write_hex(self, data):
+        print("  to write_hex", data)
+        if not len(data) % 2 == 0 :
+            raise Exception("Hex data should have even length")
         data_bytes = bytes.fromhex(data)
-        self.serial.write(data_bytes)
-
-    def set_read_timeout(self, timeout: float):
-        self.serial.timeout = timeout 
-
-    def clear_read_timeout(self):
-        self.serial.timeout = None
+        while not self.fetcher.get_serial().writable():
+            time.sleep(0.2)
+        self.fetcher.get_serial().write(data_bytes)
+        print("  done write_hex")
 
 if __name__ == "__main__":
     sl = SerialLib()
-    sl.serial_open_port("Case", "/dev/ttyUSB0", 1152000)
-    print(sl.serial_read_until("Case", "U-U", timeout=30))
-    print(sl.serial_parallel_wait("Case"))
+    sl.serial_open_port("Case", "/dev/ttyACM0", 115200)
+    sl.serial_open_port("Left", "/dev/ttyUSB2", 1152000)
+    print(sl.serial_read_until("Case", "btn", 10))
+    print(sl.serial_read_until("Case", "btn", 10))
+    print(sl.serial_read_until("Case", "btn", 10))
+    print(sl.serial_read_until("Left", "feed", 10))
+    sl.serial_close_port("Case")
+    sl.serial_close_port("Left")
+    #print(sl.serial_parallel_wait("Case"))
