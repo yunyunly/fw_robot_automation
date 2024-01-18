@@ -184,7 +184,7 @@ class BurnLib:
         if self.burning["c"] == True:
             raise RuntimeError(f"Device: c already burning.")
         
-        _burn_command = [f"{os.path.join(self.echo_tool_path, 'STM32_Programmer.sh')}"]
+        _burn_command = [f"STM32_Programmer.sh"]
         _burn_command.append(f"-c  port=SWD freq=4000 ap=0 mode=UR -hardRst")
         _burn_command.append(f"-d {os.path.join(self.echo_tool_path, filename)}")
         _burn_command.append(f"-d {os.path.join(self.echo_tool_path, bootloader)}")
