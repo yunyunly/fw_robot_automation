@@ -1,0 +1,3 @@
+
+
+robot -v prelude_id:3 -v factory_mode:False -v s_port_l:/dev/ttyUSB10 -v s_port_r:/dev/ttyUSB11 -v d_port_l:/dev/ttyUSB14 -v d_port_r:/dev/ttyUSB15 -v ble_address_l:203456789A01 -v ble_address_r:203456789A01 -v bt_address_l:203456789A00 -v bt_address_r:203456789A01 --output ~/Testing/fw_robot_automation/logs/freq_test_20_output.xml --log ~/Testing/fw_robot_automation/logs/freq_test_20_log.html ~/Testing/fw_robot_automation/test/test_freq.robot

@@ -13,34 +13,35 @@ Library           BuiltIn
 
 *** Variables ***
 ${prelude_id}=    1
-${port_l}=    /dev/ttyUSB2
-${port_r}=    /dev/ttyUSB3
-${ble_addr}=    333333333311
+${s_port_l}    /dev/ttyUSB2
+${s_port_r}    /dev/ttyUSB3
+${d_port_l}    /dev/ttyUSB4
+${d_port_r}    /dev/ttyUSB5
+
+${ble_address_l}    121233565681
+${ble_address_r}    121233565681
+${bt_address_l}    121233565680
+${bt_address_r}    121233565681
+
 @{aids_list}    Left    Right
 
 *** Test Cases ***
 Connect Bluetooth
 # Suite set up would cause error related to library __init__ and __del__. Thus placed in test case.
-    Log To Console    test vars: ${prelude_id} ${port_l} ${port_r} ${ble_addr}
+    Log To Console    test vars: ${prelude_id} ${s_port_l} ${s_port_r} ${d_port_l} ${d_port_r} ${ble_address_l} ${ble_address_r}
     #init prelude board
     Starton Device 
     Send Heartbeat
     Send BoxOpen
-    Sleep    3s
-    FOR    ${counter}   IN RANGE  3
-        #send adv 
-        Serial write hex        Left        00010a00
-        Serial write hex        Right       00010a00
-        Sleep    0.5s
-    END
+    Send Adv
 
     FOR    ${counter}   IN RANGE  3
     Log To Console    Connect bluetooth for ${counter}-th try
-    ${ret}=    Connect Hearing Aids Classic    ${ble_addr}
+    ${ret}=    Connect Hearing Aids Classic    ${ble_address_r}
     Log To Console    Connect bredr status: ${ret}
     Continue For Loop If    ${ret} == False
     Sleep    5s
-   	${ret}=    Connect Hearing Aids      ${ble_addr}
+   	${ret}=    Connect Hearing Aids      ${ble_address_r}
     Log To Console    Connect le status: ${ret}
     Run Keyword If    ${ret} == True    Exit For Loop
     Sleep    3s
@@ -49,7 +50,6 @@ Connect Bluetooth
     Should Be True    ${ret} == True
 
 Read General Status
-    Serial Open Hearing Aids 1152000
     Log Soc
     Log Volt
     Log Mcu Freq    M55 
@@ -153,45 +153,65 @@ Audio play hfp
 
 *** Keywords ***
 Set Up
-    ${tmp}=    Addr Insert Colon   ${ble_addr}
-    Set Suite Variable    ${ble_addr}    ${tmp}
+    ${tmp}=    Addr Insert Colon   ${ble_address_r}
+    Set Suite Variable    ${ble_address_r}    ${tmp}
     Log To Console    Set Up
-    Serial Open Hearing Aids 1152000
-    
     Open Device    ${prelude_id}
-    Starton Device
-    Reset Device 
+    SerialSetUp
 
-    Serial Parallel Read Until Regex    Left    soc: ([0-9]+)%    timeout=${5}
-    Serial Parallel Read Until Regex    Right    soc: ([0-9]+)%    timeout=${5}
-
-    Serial Parallel Read Start    ${aids_list}  
-    ${soc}=  Serial Parallel Read Wait    ${aids_list}  
-
-    # Should Be True    ${soc}[Left][0][0] >= 10 and ${soc}[Left][0][0] <= 100
-    # Should Be True    ${soc}[Right][0][0] >= 10 and ${soc}[Right][0][0] <= 100
-
-    #Log To Console    Left soc = ${soc}[Left][0][0] ; Right soc = ${soc}[Right][0][0]
-    Reset Device 
 
 Tear Down
     Log To Console    Tear Down
+    Disconnect Hearing Aids    ${ble_address_r}
     Shutdown Device
-    Serial Close Hearing Aids 
-    Disconnect Hearing Aids    ${ble_addr}
+    SerialTearDown
+    Close Ftdi
+
+SerialSetUp
+    Serial Open Hearing Aids 1152000
+    Serial Open Hearing Aids 9600
+
+    Check Init Soc 
+
+
+Check Init Soc   
+    Log To Console    Check Init Soc
+    Starton Device
+    Serial Parallel Read Until Regex    Left    soc: ([0-9]+)%    timeout=${10}
+    Serial Parallel Read Until Regex    Right    soc: ([0-9]+)%    timeout=${10}
     
+    Serial Parallel Read Start    ${aids_list} 
+    Reset Device 
+    ${soc}=  Serial Parallel Read Wait    ${aids_list}  
+
+    Log To Console    Left soc = ${soc}[Left][0][0] ; Right soc = ${soc}[Right][0][0]
+    Run Keyword If    ${soc}[Left][0][0] <10 or ${soc}[Right][0][0] <= 10    Charge Device
+
+    Should Be True    ${soc}[Left][0][0] >= 10 and ${soc}[Left][0][0] <= 100
+    Should Be True    ${soc}[Right][0][0] >= 10 and ${soc}[Right][0][0] <= 100
+
+    Reset Device 
+
+SerialTearDown
+    Serial Close Hearing Aids 9600
+    Serial Close Hearing Aids 1152000
+
+
 Serial Open Hearing Aids 9600
-    Serial Open Port    Left     ${port_l}    9600
-    Serial Open Port    Right    ${port_r}    9600
+    Serial Open Port    s_Left     ${s_port_l}    9600
+    Serial Open Port    s_Right    ${s_port_r}    9600
     
 Serial Open Hearing Aids 1152000
-    Serial Open Port    Left     ${port_l}    1152000
-    Serial Open Port    Right    ${port_r}    1152000
+    Serial Open Port    Left     ${d_port_l}    1152000
+    Serial Open Port    Right    ${d_port_r}    1152000
 
-Serial Close Hearing Aids 
+Serial Close Hearing Aids 9600
+    Serial Close Port    s_Left
+    Serial Close Port    s_Right
+
+Serial Close Hearing Aids 1152000
     Serial Close Port    Left
     Serial Close Port    Right
-    Close Ftdi
 
 Starton Device 
     Charge    Off    lr
@@ -218,31 +238,36 @@ Reset Device
     Sleep    1s
 
 Shutdown Device 
-    Serial Open Hearing Aids 9600
-    Serial write hex    Left    00010100
-    Serial write hex    Right   00010100
+    Serial write hex    s_Left    010100
+    Serial write hex    s_Right   010100
     Sleep     0.2s
 
-    Serial write hex    Left    00010100
-    Serial write hex    Right   00010100
+    Serial write hex    s_Left    010100
+    Serial write hex    s_Right   010100
+    Sleep     0.2s
 
 Send Heartbeat
-    Serial Open Hearing Aids 9600
-    Serial write hex        Left        0001ff00
-    Serial write hex        Right       0001ff00
-    Sleep    0.2s 
-    Serial write hex        Left        0001ff00
-    Serial write hex        Right       0001ff00
-    Sleep    0.7s 
-    Serial write hex        Left        0001ff00
-    Serial write hex        Right       0001ff00
-    Sleep    0.7s 
-    Serial write hex        Left        0001ff00
-    Serial write hex        Right       0001ff00
-    Sleep    0.7s 
-    Serial write hex        Left        0001ff00
-    Serial write hex        Right       0001ff00
+    FOR    ${counter}   IN RANGE  3
+        #send adv 
+        Serial write hex        s_Left        01ff00
+        Serial write hex        s_Right       01ff00
+        Sleep    0.2s
+    END
 
 Send BoxOpen
-    Serial write hex        Left        00010200
-    Serial write hex        Right       00010200
+    Serial write hex        s_Left        010200
+    Serial write hex        s_Right       010200
+    Sleep    0.2s 
+
+Send BoxClose
+    Serial write hex        s_Left        010300
+    Serial write hex        s_Right       010300
+    Sleep    0.2s 
+
+Send Adv 
+    FOR    ${counter}   IN RANGE  2
+        #send adv 
+        Serial write hex        s_Left        010a00
+        Serial write hex        s_Right       010a00
+        Sleep    0.2s
+    END
