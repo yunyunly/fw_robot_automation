@@ -1,417 +1,507 @@
+import pgi 
+pgi.install_as_gi()
+from gi.repository import GLib
+
+import bluetooth.utils as utils 
+import bluetooth.constants as constants
+import dbus
+from dbus import proxies
+from dbus import _dbus
+from dbus import connection
+import dbus.mainloop.glib
 import sys
-try:
-    import dbus
-    import dbus.mainloop.glib
-except ImportError as e:
-    if 'linux' not in sys.platform:
-        raise e
-    print(e)
-    print('Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue')
-    raise
-
-from logging import error
 import time
+import threading
 import robot.api.logger 
-import subprocess
 
-BLUEZ_SERVICE_NAME = 'org.bluez'
-DBUS_OM_IFACE = 'org.freedesktop.DBus.ObjectManager'
-DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
+#sys.path.insert(0, '.')
 
-ADAPTER_IFACE = 'org.bluez.Adapter1'
-DEVICE_IFACE = 'org.bluez.Device1'
+dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+mainloop: GLib.MainLoop
+signal_receivers: list[connection.SignalMatch] = list()
 
-GATT_MANAGER_IFACE = 'org.bluez.GattManager1'
-LE_ADVERTISING_MANAGER_IFACE = 'org.bluez.LEAdvertisingManager1'
+service_resolved_event = threading.Event()
+new_device_event = threading.Event()
+manufacturer_data_event = threading.Event()
 
-GATT_SERVICE_IFACE = 'org.bluez.GattService1'
-GATT_CHRC_IFACE = 'org.bluez.GattCharacteristic1'
 
-MEDIA_SERVICE_IFACE = "org.bluez.MediaEndpoint1"
-MEDIA_CHRC_IFACE = "org.bluez.MediaTransport1"
+def get_managed_object_path(object_manager, object_path):
+    managed = False 
+    managed_objects = object_manager.GetManagedObjects()
+    for path, ifaces in managed_objects.items():
+        if object_path == path:
+            managed = True
+    if managed:
+        return object_path
+    return None 
 
-BLE_HEARING_AIDS_SERVICE_UUID = "01000100-0000-1000-8000-009078563412"
-BLE_HEARING_AIDS_CHRC_UUID = "03000300-0000-1000-8000-009278563412"
-BT_HEARING_AIDS_SERVICE_UUID = "00000001-0000-1000-8000-00805f9b34fb"
-
-BLE_CHARGING_CASE_SERVICE_UUID = ""
-BLE_CHARGING_CASE_CHRC_UUID = ""
-
-Console = robot.api.logger.console 
-Debug = robot.api.logger.debug 
-Info = robot.api.logger.info 
-
-class DBusException(dbus.exceptions.DBusException):
-    pass
-
-class Characteristic:
-    def __init__(self):
-        self.iface = None
-        self.path = None
-        self.props = None
-
-class Service:
-    def __init__(self):
-        self.iface = None
-        self.path = None
-        self.props = None
-        self.chars = []
-
-class Device:
-    def __init__(self):
-        self.iface = None
-        self.path = None
-        self.props = None
-        self.name = None
-        self.addr = None
-        self.services = []
-        self.services_bt = []
-        self.service_le = None
+def get_if_connected(object_manager, object_path):
+    connected = False 
+    managed_objects = object_manager.GetManagedObjects()
+    ifaces = managed_objects.get(object_path)
+    device1_properties = ifaces.get(constants.DEVICE_INTERFACE)
+    if 'Connected' in device1_properties:
+        connected = utils.dbus_to_python(device1_properties['Connected'])
+    return connected
 
 class Adapter:
-    def __init__(self):
-        self.iface = None
-        self.path = None
-        self.props = None
+    def __init__(self, path, obj, interface):
+        self.path: str = path 
+        self.obj: proxies.ProxyObject = obj
+        self.interface: proxies.Interface = interface
 
-class BluetoothLib(object):
-    """This class is the underlying impl for charging case and hearing aids bluetooth related libraries.
+class Device:
+    def __init__(self, path, obj, interface):
+        self.path: str = path
+        self.obj: proxies.ProxyObject = obj
+        self.interface: proxies.Interface = interface
+        self.rx: proxies.Interface
+        self.tx: proxies.Interface
 
-    Do not suggest you use its any API in test cases, you should use HearingAidsLib or ChargingCaseLib.
-    """
+def mainloop_run():
+    global mainloop
+    bus = dbus.SystemBus()
+    signal_receivers.append(bus.add_signal_receiver(interfaces_added,
+            dbus_interface = constants.DBUS_OM_IFACE,
+            signal_name = "InterfacesAdded"))
+    signal_receivers.append(bus.add_signal_receiver(interfaces_removed,
+            dbus_interface = constants.DBUS_OM_IFACE,
+            signal_name = "InterfacesRemoved"))
+    signal_receivers.append(bus.add_signal_receiver(properties_changed,
+            dbus_interface = constants.DBUS_PROPERTIES,
+            signal_name = "PropertiesChanged",
+            path_keyword = "path"))
+    mainloop.run()
+    print("mainloop run end")
+
+def mainloop_quit():
+    global mainloop
+    if mainloop_is_running():
+        for i in signal_receivers:
+            i.remove()
+        #bus.remove_signal_receiver(interfaces_added,"InterfacesAdded")
+        #bus.remove_signal_receiver(interfaces_added,"InterfacesRemoved")
+        #bus.remove_signal_receiver(properties_changed,"PropertiesChanged")
+        mainloop.quit()
+    print("routine end")
+
+def mainloop_is_running():
+    global mainloop
+    return mainloop.is_running()
+
+class BluetoothLib:
     ROBOT_LIBRARY_SCOPE = 'SUITE'
     charging_case_header = 9
-    hci_id = 0
-    case_addr:str 
-    hearing_aids_addr:str
     def __init__(self):
-        self.bus = dbus.SystemBus()
-        self.bluez_obj = self.bus.get_object("org.bluez", "/org/bluez")
-        self.adapter_obj = self.bus.get_object("org.bluez", f"/org/bluez/hci{self.hci_id}")
-        self.om_if = dbus.Interface(
-            self.bus.get_object("org.bluez", "/"), 
-            "org.freedesktop.DBus.ObjectManager"
-        )
-        dev_itf = dbus.Interface(self.adapter_obj, 'org.freedesktop.DBus.Properties')
-        dev_itf.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(False))
-        time.sleep(1)
-        print(dev_itf.Get("org.bluez.Adapter1", "Powered"))
-        dev_itf.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(True))
-        time.sleep(1)
-        print(dev_itf.Get("org.bluez.Adapter1", "Powered"))
-        Console("Bluetooth Inited")
-        return 
+        pass
 
     def __del__(self):
-        try:
-            # Cleanup
-            self.ble_disconnect_hearing_aids()
-            print('Bluetooth Lib Exit')
-        except Exception as e:
-            print(e)
-            
+        pass 
+    
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(BluetoothLib, cls).__new__(cls)
+        return cls.instance
+
     def init(self):
-        """
-            Temp palceholder for new ble lib
-        """
-        return
-    
+        global mainloop
+        self.adapter: Adapter
+        self.ha: Device 
+        self.cc: Device
+        self.bus = dbus.SystemBus()
+        mainloop = GLib.MainLoop()
+        self.object_manager = dbus.Interface(self.bus.get_object(constants.BLUEZ_SERVICE_NAME, "/"), constants.DBUS_OM_IFACE)
+
+        self.config_adapter()
+        self.mainloop = threading.Thread(target = mainloop_run)
+        self.mainloop.start()
+
     def quit(self):
-        """
-            Temp palceholder for new ble lib
-        """
-        return
-    
-    def connect(self, addr="D0:14:11:20:20:18"):
-        """Connect Device via bluetoothctl
-        
-        Examples:
-        | Connect | D0:11:22:33:44:55 |
-        """
-        dev_addr = addr.replace(":", "_")
-        dev_path = f'/org/bluez/hci{self.hci_id}/dev_{dev_addr}'
-        cnt = 10 
-        while dev_path not in self.om_if.GetManagedObjects().keys():
-            time.sleep(3)
-            cnt = cnt - 1 
-            if cnt == 0:
-                print("timeout")
-                return None, None
-            #print(self.om_if.GetManagedObjects().keys())
+        if mainloop_is_running():
+            mainloop_quit()
+            time.sleep(0.1)
+            self.mainloop.join()
+            del self.mainloop
 
-        dev_obj = self.bus.get_object("org.bluez", dev_path)
+    def config_adapter(self):
+        adapter_path = constants.BLUEZ_NAMESPACE + constants.ADAPTER_NAME
+        adapter_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, adapter_path)
+        adapter_interface= dbus.Interface(adapter_object, constants.ADAPTER_INTERFACE)
+        self.adapter = Adapter(adapter_path, adapter_object, adapter_interface)
+
+    def discover_device(self, addr):
+        global new_device_event
+        self.adapter.interface.StartDiscovery(byte_arrays=True)
+        dev_path = utils.device_address_to_path(addr, self.adapter.path)
+        device_path = get_managed_object_path(self.object_manager, dev_path)
+        if device_path is None:
+            print("[Discover]", "No Managed Device Found")
+            new_device_event.wait(15)
+            new_device_event.clear()
+        else:
+            print("[Discover]", "Managed Device Found")
+            connected = get_if_connected(self.object_manager, device_path)
+            if connected:
+                print("[Discover]", "Managed Device Was Connected")
+                manufacturer_data_event.wait(15)
+                manufacturer_data_event.clear() 
+            else:
+                print("[Discover]", "Managed Device Was Disconnected")
+                time.sleep(10)
+        self.adapter.interface.StopDiscovery()
+        device_path = get_managed_object_path(self.object_manager, dev_path)
+        if device_path :
+            print("[Discover] Device Found")
+            return constants.RESULT_OK 
+        else:
+            print("[Discover] Device Not Found")
+            return constants.RESULT_ERR_NOT_FOUND
+
+    def connect_device(self, addr):
+        device_path = utils.device_address_to_path(addr, self.adapter.path)
+        device_path = get_managed_object_path(self.object_manager, device_path)
+        if device_path is None:
+            return constants.RESULT_ERR_NOT_FOUND
+        connected = get_if_connected(self.object_manager, device_path)
+        if connected:
+            pass 
+
+        device_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path)
+        device_interface = dbus.Interface(device_object, constants.DEVICE_INTERFACE)
         try:
-            print("connecting...")
-            dev_itf = dbus.Interface(dev_obj, 'org.freedesktop.DBus.Properties')
-            dev_itf.Set('org.bluez.Device1', 'Trusted', dbus.Boolean(True))
-            time.sleep(2)
-            Console("device trusted status: "+str(dev_itf.Get('org.bluez.Device1', 'Trusted')))
-            dev_obj.Connect(dbus_interface="org.bluez.Device1")
-        except:
-            try: 
-                print("connecting...")
-                dev_obj.Connect(dbus_interface="org.bluez.Device1")
-            except Exception as e:
-                error(e)
-        return (dev_obj, dev_path)
-    
-    def send(self, iface, data):
-        """Send data to connected device via BLE 
-        
-        You should not use it in test cases
-        """
-        Console(f"WriteValue: {bytearray(data).hex()}")
-        try:
-            iface.WriteValue(bytearray(data), {})
+            props = dbus.Interface(device_object, constants.DBUS_PROPERTIES)
+            props.Set(constants.DEVICE_INTERFACE, "Trusted", True)
+            device_interface.Connect()
         except Exception as e:
-            error(e)
-
-    def read(self, iface):
-        """Read properties, not recieving
-        
-        You should not use it in test cases 
-        """
-        return iface.ReadValue("")
+            print("[Connect] Failed to connect", e)
+            #print(e.get_dbus_name())
+            #print(e.get_dbus_message())
+            if ("UnknownObject" in e.get_dbus_name()):
+                print("[Connect] Try scan first to resolve this problem")
+            return constants.RESULT_EXCEPTION
+        else:
+            print("[Connect] Connect Ok")
+            return constants.RESULT_OK
     
-    def get_gatt_char(self, dev_path, srv_id, char_id):
-        char_path = f"{dev_path}/{srv_id}/{char_id}"
-        cnt = 10
-        while char_path not in self.om_if.GetManagedObjects():
-            print("scan char...")
-            time.sleep(1)
-            cnt = cnt - 1 
-            if cnt == 0 : return None 
-        return dbus.Interface(self.bus.get_object("org.bluez", char_path), "org.bluez.GattCharacteristic1")
-
-    def ble_scan_on(self):
-        try:
-            filter = dict()
-            self.adapter_obj.SetDiscoveryFilter(filter, dbus_interface="org.bluez.Adapter1")
-            self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
-        except:
-            raise Exception("scan on failed")
+    def discover_service(self):
+        global service_resolved_event
+        flag = service_resolved_event.wait(15)
+        if flag:
+            service_resolved_event.clear()
+            return constants.RESULT_OK 
+        else:
+            return constants.RESULT_ERR_SERVICES_NOT_RESOLVED
     
-    def ble_scan_on_le_only(self, devaddr):
+    def disconnect_device(self, addr):
+        device_path = utils.device_address_to_path(addr, self.adapter.path)
+        device_path = get_managed_object_path(self.object_manager, device_path)
+        if device_path == None:
+            return constants.RESULT_ERR_NOT_FOUND
+        connected = get_if_connected(self.object_manager, device_path)
+        print("[Disconnect] previous connected:", connected)
+        if not connected:
+            return constants.RESULT_ERR_NOT_CONNECTED
+        device_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path)
+        device_interface = dbus.Interface(device_object, constants.DEVICE_INTERFACE)
         try:
-            filter = dict()
-            filter.update({"Transport" :  "le"})
-            self.adapter_obj.SetDiscoveryFilter(filter, dbus_interface="org.bluez.Adapter1")
-            self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
-        except:
-            raise Exception("scan on failed")
-
-    def ble_scan_on_bredr_only(self):
-        try:
-            filter = dict()
-            filter.update({"Transport" :  "bredr"})
-            filter.update({"UUIDs": ["00000001-0000-1000-8000-00805f9b34fb"]})
-            self.adapter_obj.SetDiscoveryFilter(filter, dbus_interface="org.bluez.Adapter1")
-            self.adapter_obj.StartDiscovery(dbus_interface="org.bluez.Adapter1")
-        except:
-            raise Exception("scan on failed")
-
-    def ble_scan_off(self):
-        try:
-            self.adapter_obj.StopDiscovery(dbus_interface="org.bluez.Adapter1")
-        except:
-            raise Exception("scan off failed")
+            device_interface.Disconnect()
+        except Exception as e:
+            print("[Disconnect] Failed to disconnect", e)
+            #print(e.get_dbus_name())
+            #print(e.get_dbus_message())
+            return constants.RESULT_EXCEPTION
+        else:
+            print("[Disconnect] OK")
+            return constants.RESULT_OK
     
-    def ble_connect_case(self, addr = "D0:14:11:20:20:18"):
-        """Connect to a given address charging case, no matter whether it is cached"""
-        print("Blue Connect Case...")
-        self.ble_scan_on_le_only(addr)
-        self.case, self.case_path = self.connect(addr)
-        if self.case is None:
-            self.ble_scan_off()
-            return False 
-        self.case_char_if = self.get_gatt_char(self.case_path, "service0019", "char001a")
-        print("Case Char Interface", self.case_char_if)
-        self.case_addr = addr
-        self.ble_scan_off()
-        return True
+    def remove_device(self, addr):
+        device_path = utils.device_address_to_path(addr, self.adapter.path)
+        device_path = get_managed_object_path(self.object_manager, device_path)
+        if device_path == None:
+            return constants.RESULT_ERR_NOT_FOUND
+        device_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path)
+        try:
+            self.adapter.interface.RemoveDevice(device_object)
+        except Exception as e:
+            print("[Remove] Failed to remove", e)
+            #print(e.get_dbus_name())
+            #print(e.get_dbus_message())
+            return constants.RESULT_EXCEPTION
+        else:
+            print("[Remove] OK")
+            return constants.RESULT_OK
     
-    def bt_connect_hearing_aids(self, devaddr):
-        """Connect to classic bluetooth hearing aids"""
-        print("Blue Connect Hearing Aids...")
-        print("connecting bredr...")
-        self.ble_scan_on_bredr_only()
-        self.hearing_aids, self.hearing_aids_path = self.connect(devaddr)
-        if self.hearing_aids is None:
-            self.ble_scan_off()
+    def discover_connect_resolve(self, addr):
+        print("|| Discover Device")
+        if self.discover_device(addr) == constants.RESULT_OK:
+            print("|| Discover Device Success")
+            print("|| Connect")
+            if self.connect_device(addr) == constants.RESULT_OK:
+                print("|| Connect Success")
+                print("|| Resolve Service")
+                if self.discover_service() == constants.RESULT_OK:
+                    print("|| Resolve Service Success")
+                    return constants.RESULT_OK
+                else:
+                    print("|| Failed Resolve Service")
+                    return constants.RESULT_ERR_SERVICES_NOT_RESOLVED
+            else:
+                print("== Failed Connect")
+                return constants.RESULT_ERR_NOT_CONNECTED
+        else:
+            print("== Failed Discover Device")
+            return constants.RESULT_ERR_NOT_FOUND
+
+    def ble_connect_hearing_aids(self, addr):
+        """Connect to low energy bluetooth hearing aids"""
+        print("=== BLE Connect Hearing Aids ===")
+        filter = dict()
+        filter.update({"Pattern" :  addr})
+        try:
+            self.adapter.interface.SetDiscoveryFilter(filter)
+        except Exception as e:
+            print("set discovery filter failed", e)
             return False
-        self.ble_scan_off()
 
-        dbus_obj_mgr = dbus.Interface(self.bus.get_object(BLUEZ_SERVICE_NAME, '/'), DBUS_OM_IFACE)
-        dbus_objs = dbus_obj_mgr.GetManagedObjects()
-        
-        for path, interfaces in dbus_objs.items():
-            if MEDIA_SERVICE_IFACE in interfaces.keys():
-                if path.startswith(self.hearing_aids_path):
-                    print("bredr connected")
-                    return True 
-        print("bredr false connected")
+        if constants.RESULT_OK == self.discover_connect_resolve(addr):
+            device_path = utils.device_address_to_path(addr, self.adapter.path)
+            device_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path)
+            device_path = get_managed_object_path(self.object_manager, device_path)
+            device_interface = dbus.Interface(device_object, constants.GATT_SERVICE_INTERFACE)
+            self.ha = Device(device_path, device_object, device_interface)
+            char_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path+"/service001a/char001f")
+            self.ha.tx = dbus.Interface(char_object, constants.GATT_CHARACTERISTIC_INTERFACE)
+            return True 
+        else:
+            return False
+    
+    def bt_connect_hearing_aids(self, addr):
+        """Connect to classic bluetooth hearing aids"""
+        print("=== BT Connect Hearing Aids ===")
+        filter = dict()
+        filter.update({"Transport" :  "bredr"})
+        filter.update({"Pattern" :  addr})
+        try:
+            self.adapter.interface.SetDiscoveryFilter(filter)
+        except Exception as e:
+            print("set discovery filter failed", e)
+            return False
+        if constants.RESULT_OK == self.discover_connect_resolve(addr):
+            return True 
         return False
 
-    def ble_connect_hearing_aids(self, addr = "D0:14:11:20:20:18"):
-        """Connect to low energy bluetooth hearing aids"""
-        
-        print("Blue Connect Hearing Aids...")
-        self.ble_scan_on_le_only(addr)
-        print("connecting le...")
-        time.sleep(3)
-        self.hearing_aids, self.hearing_aids_path = self.connect(addr)
-        if self.hearing_aids is None:
-            self.ble_scan_off()
-            return False
-        print("le connected")
-        time.sleep(1)
-        print("connecting char...")
-        self.hearing_aids_char_if = self.get_gatt_char(self.hearing_aids_path, "service001a", "char001f")
-        if self.hearing_aids_char_if is None :
-            print("char not connected")
-            self.ble_scan_off()
-            return False
-        self.hearing_aids_addr = addr
-        self.ble_scan_off()
-        print("char connected")
-        return True
-    
-    def disconnect(self, devaddr):
-        device_path = f"/org/bluez/hci{self.hci_id}/dev_" + devaddr.replace(":", "_")
-        device = dbus.Interface(self.bus.get_object("org.bluez", device_path),"org.bluez.Device1")
-        ret = False
+    def ble_connect_case(self, addr):
+        """Connect to a given address charging case, no matter whether it is cached"""
+        print("=== BLE Connect Charging Case ===")
+        filter = dict()
+        filter.update({"Transport" :  "le"})
+        filter.update({"Pattern" :  addr})
         try:
-            print('disconnecting device')
-            props = dbus.Interface(self.bus.get_object("org.bluez", device_path), DBUS_PROP_IFACE)
-            device_conn = props.Get(DEVICE_IFACE, 'Connected')
-            if device_conn == 1:
-                device.Disconnect(dbus_interface=DEVICE_IFACE)
-                for cnt in range(10, 0, -1):
-                    time.sleep(5)
-                    device_conn = props.Get(DEVICE_IFACE, 'Connected')
-                    if device_conn == 0:
-                        print('device disconnected')
-                        break
-                    print('number of retries left ({})'.format(cnt - 1))
-                if device_conn == 1:
-                    print('failed to disconnect device')
-            adapter_if = dbus.Interface(self.adapter_obj, "org.bluez.Adapter1")
-            adapter_if.RemoveDevice(device)
-            ret = True
-        except dbus.DBusException as e:
-            error(e)
+            self.adapter.interface.SetDiscoveryFilter(filter)
         except Exception as e:
-            error(e)
-        finally:
-            return ret 
+            print("Failed to set discovery filter", e)
+            return False
 
-    def ble_disconnect_case(self, dev_addr=None):
-        """Disconnect from charging case"""
-        if dev_addr is None:
-            if self.case_addr is None:
-                return True 
-            dev_addr = self.case_addr
-        return self.disconnect(dev_addr)
-    
-    def ble_disconnect_hearing_aids(self, dev_addr=None):
+        if constants.RESULT_OK == self.discover_connect_resolve(addr):
+            device_path = utils.device_address_to_path(addr, self.adapter.path)
+            device_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path)
+            device_path = get_managed_object_path(self.object_manager, device_path)
+            device_interface = dbus.Interface(device_object, constants.GATT_SERVICE_INTERFACE)
+            self.cc = Device(device_path, device_object, device_interface)
+            char_object = self.bus.get_object(constants.BLUEZ_SERVICE_NAME, device_path+"/service0019/char001a")
+            self.cc.tx = dbus.Interface(char_object, constants.GATT_CHARACTERISTIC_INTERFACE)
+            return True 
+        else:
+            return False
+
+    def ble_disconnect_hearing_aids(self, addr):
         """Disconnect from hearing aids"""
-        if dev_addr is None:
-            if self.hearing_aids_addr is None:
-                return True
-            dev_addr = self.hearing_aids_addr
-        return self.disconnect(dev_addr)
+        self.disconnect_device(addr)
+        self.remove_device(addr)
+
+    def ble_disconnect_case(self, addr):
+        """Disconnect from charging case"""
+        self.disconnect_device(addr)
+        self.remove_device(addr)
 
     def ble_send_case(self, data):
         """Send data to connected charging case"""
-        self.send(self.case_char_if, [self.charging_case_header] + data)
-        return     
+        data = [self.charging_case_header] + data
+        print(f"WriteValue: {bytearray(data).hex()}")
+        try:
+            self.cc.tx.WriteValue(bytearray(data), {})
+        except Exception as e:
+            print("Failed to write", e)
+            return False 
+        else:
+            print("Write OK")
+            return True
 
     def ble_send_hearing_aids(self, data):
         """Send data to connected hearing aids"""
-        self.send(self.hearing_aids_char_if, data)
-        return 
-    
-    def ble_case_connected(self, dev_addr=None):
-        """Return True if charging case connected, otherwise False"""
-        if dev_addr is None:
-            dev_addr = self.case_addr
-        dev_path = f"/org/bluez/hci{self.hci_id}/dev_" + dev_addr.replace(":", "_")
+        print(f"WriteValue: {bytearray(data).hex()}")
         try:
-            device = dbus.Interface(self.bus.get_object("org.bluez", dev_path), "org.freedesktop.DBus.Properties")
-            ret = device.Get("org.bluez.Device1", "Connected")
-            return ret == dbus.Boolean(1)
-        except dbus.exceptions as e: 
-            print(e)
+            self.ha.tx.WriteValue(bytearray(data), {})
+        except Exception as e:
+            print("Failed to write", e)
+            #print(e.get_dbus_name())
+            #print(e.get_dbus_message())
             return False
-
-    def ble_hearing_aids_connected(self, dev_addr=None):
-        """Return True if hearing aids connected, otherwise False"""
-        if dev_addr is None:
-            dev_addr = self.hearing_aids_addr
-        dev_path = f"/org/bluez/hci{self.hci_id}/dev_" + dev_addr.replace(":", "_")
-        try:
-            device = dbus.Interface(self.bus.get_object("org.bluez", dev_path), "org.freedesktop.DBus.Properties")
-            ret = device.Get("org.bluez.Device1", "Connected")
-            return ret == dbus.Boolean(1)
-        except dbus.exceptions as e: 
-            print(e)
-            return False
-    
-    def ble_pair(self, dev_addr=None):
-        """Not Implemented Yet"""
-        if dev_addr is None:
-            dev_addr = self.hearing_aids_addr 
-        dev_path = f"/org/bluez/hci{self.hci_id}/dev_" + dev_addr.replace(":", "_")
-        print("dev path", dev_path)
-        self.ble_scan_on()
-        cached = len([x for x in self.om_if.GetManagedObjects() if dev_path in x]) != 0
-        print("scan device")
-        while not cached:
-            print(".", end="")
-            time.sleep(0.4)
-            cached = len([x for x in self.om_if.GetManagedObjects() if dev_path in x]) != 0 
-        ret = False 
-        try:
-            iface = dbus.Interface(self.bus.get_object("org.bluez", dev_path), "org.bluez.Device1")
-            print(iface, type(iface))
-            ret = iface.Pair({}) 
-            print(ret ,type(ret))
-        except dbus.DBusException as e:
-            print(e)
-        self.ble_scan_off()
-        return ret 
-
-    def ble_unpair(self, dev_addr=None):
-        """Not Implemented Yet"""
-        if dev_addr is None:
-            dev_path = self.hearing_aids_addr
         else:
-            dev_path = f"/org/bluez/hci{self.hci_id}/dev_{dev_addr}".replace(":","_")
-        print("unpair", dev_path)
-        hci_path = f"/org/bluez/hci{self.hci_id}"
-        try:
-            iface = dbus.Interface(self.bus.get_object("org.bluez", hci_path), "org.bluez.Adapter1")
-            ret = iface.RemoveDevice(dev_path)
-            return ret 
-        except dbus.DBusException as e:
-            print(e)
-            return False
-        
-    def addr_remove_colon(self,dev_addr:str):
-        """given a colon seperated bluetooth addres, return a string of the address without colon"""
-        ble_address_without_colons = dev_addr.replace(':', '')
-        return ble_address_without_colons
+            print("Write OK")
+            return True
     
-    def addr_insert_colon(self,dev_addr:str):
-        """given a bluetooth adddress string without colon, return the address with colon seperation"""
-        ble_address_with_colons = ':'.join([dev_addr[i:i+2] for i in range(0, len(dev_addr), 2)])
-        return ble_address_with_colons
-      
-# if __name__ == "__main__":
-#     ble = BluetoothLib()
-#     if True == ble.bt_connect_hearing_aids("12:34:56:78:A0:B3"):
-#         # wait some time better
-#         time.sleep(5)
-#         ble.ble_connect_hearing_aids("12:34:56:78:A0:B3")
-#     output = subprocess.check_output(["busctl", "tree", "org.bluez"])
-#     print(output.decode())
+    def ble_case_connected(self, addr):
+        """Return True if charging case connected, otherwise False"""
+        device_path = utils.device_address_to_path(addr, self.adapter.path)
+        device_path = get_managed_object_path(self.object_manager, device_path)
+        if device_path:
+            return get_if_connected(self.object_manager, device_path)
+        else:
+            return False
+
+    def ble_hearing_aids_connected(self, addr):
+        """Return True if hearing aids connected, otherwise False"""
+        device_path = utils.device_address_to_path(addr, self.adapter.path)
+        device_path = get_managed_object_path(self.object_manager, device_path)
+        if device_path:
+            return get_if_connected(self.object_manager, device_path)
+        else:
+            return False
+
+def interfaces_added(path, interfaces):
+    # interfaces is an array of dictionary entries
+    global new_device_event
+    if not path.startswith("/org/bluez"):
+        return 
+    if constants.DEVICE_INTERFACE in interfaces:
+        device_properties = interfaces[constants.DEVICE_INTERFACE]
+        print("------------------------------")
+        print("[ADD] NEW path  :", path)
+
+        if 'Address' in device_properties:
+            print("[ADD] NEW bdaddr: ", utils.dbus_to_python(device_properties['Address']))
+        if 'Name' in device_properties:
+            print("[ADD] NEW name  : ", utils.dbus_to_python(device_properties['Name']))
+
+        if 'RSSI' in device_properties:
+            print("[ADD] NEW RSSI  : ", utils.dbus_to_python(device_properties['RSSI']))
+        new_device_event.set()
+
+    if constants.GATT_SERVICE_INTERFACE in interfaces:
+        properties = interfaces[constants.GATT_SERVICE_INTERFACE]
+        print("[ADD] SVC path   :", path)
+        if 'UUID' in properties:
+            uuid = properties['UUID']
+            print("[ADD] SVC UUID   : ", utils.dbus_to_python(uuid))
+            if uuid == constants.ECHO_GATT_SVC_UUID:
+                print("[ADD] SVC Name   : ", "Echo Gatt Service")
+            elif uuid == constants.ORKA2_GATT_SVC_UUID:
+                print("[ADD] SVC Name   : ", "Orka2 Gatt Service")
+            #print("SVC name   : ", utils.get_name_from_uuid(uuid))
+            else:
+                print("[ADD] SVC Name   : ", "Others")
+    if constants.GATT_CHARACTERISTIC_INTERFACE in interfaces:
+        properties = interfaces[constants.GATT_CHARACTERISTIC_INTERFACE]
+        print("[ADD]   CHR path   :", path)
+        if 'UUID' in properties:
+            uuid = properties['UUID']
+            print("[ADD]   CHR UUID   : ", utils.dbus_to_python(uuid))
+            if uuid == constants.ECHO_GATT_CHR_UUID:
+                print("[ADD]   CHR Name   : ", "Echo Gatt Characteristic")
+            elif uuid == constants.ORKA2_GATT_CHR_UUID:
+                print("[ADD]   CHR Name   : ", "Orka2 Gatt Characteristic")
+            else:
+                print("[ADD]   CHR Name   : ", "Others")
+            flags  = ""
+            for flag in properties['Flags']:
+                flags = flags + flag + ","
+            print("[ADD]   CHR flags  : ", flags)
+    
+    if constants.MEDIA_CONTROL_INTERFACE in interfaces:
+        properties = interfaces[constants.MEDIA_CONTROL_INTERFACE]
+        print("[ADD]   Media path   : ", path)
+        print("[ADD]   Media interfaces : ", interfaces)
+        if 'UUID' in properties:
+            uuid = properties['UUID']
+            if uuid == constants.HFP_UUID:
+                print("[ADD]   HFP Interface Added")
+            elif uuid == constants.A2DP_AUDIO_SINK_UUID:
+                print("[ADD]   A2DP Interface Added")
+            else:
+                print("[ADD]   Others Interface Added")
+    if constants.MEDIA_TRANSPORT_INTERFACE in interfaces:
+        properties = interfaces[constants.MEDIA_TRANSPORT_INTERFACE]
+        print("[ADD]   Media path   : ", path)
+        print("[ADD]   Media interfaces : ", interfaces)
+        if 'UUID' in properties:
+            uuid = properties['UUID']
+
+def interfaces_removed(path, interfaces):
+    if not path.startswith("/org/bluez"):
+        return 
+    print("------------------------------")
+    print("[DEL] DEL path : ", path)
+    for i in interfaces:
+        print("[DEL]  DEL   : ", i)
+
+def properties_changed(interface, changed, invalidated, path):
+    global service_resolved_event
+    if not path.startswith("/org/bluez"):
+        return 
+    print("------------------------------")
+    print(f'[CHG] CHG path: {path}\n  interface: {interface}')
+    for k,v in changed.items():
+        print("[CHG]   CHGD: ", k, "To",v)
+    if interface != constants.DEVICE_INTERFACE:
+        return
+    if 'ServicesResolved' in changed:
+        sr = utils.dbus_to_python(changed['ServicesResolved'])
+        if sr == True:
+            service_resolved_event.set()
+    # Hardcode. Discover new device while device was found
+    if 'ManufacturerData' in changed:
+        mf = utils.dbus_to_python(changed['ManufacturerData'])
+        if 13621 in mf:
+            manufacturer_data_event.set()
+    # Hardcode. Simulate ServicesResolved while service was resolved
+    if 'UUIDs' in changed:
+        uuids: list[str] = utils.dbus_to_python(changed['UUIDs'])
+        expected = ['00000000-17e7-4aa2-b4a3-771fd30a70f1', 
+                    '0000110b-0000-1000-8000-00805f9b34fb', 
+                    '0000110c-0000-1000-8000-00805f9b34fb', 
+                    '0000110e-0000-1000-8000-00805f9b34fb', 
+                    '0000111e-0000-1000-8000-00805f9b34fb', 
+                    '00001800-0000-1000-8000-00805f9b34fb', 
+                    '00001801-0000-1000-8000-00805f9b34fb', 
+                    '01000100-0000-1000-8000-009078563412', 
+                    '66666666-6666-6666-6666-666666666666']
+        if not (len(uuids) == len(expected)):
+            pass 
+        else:
+            uuids.sort()
+            expected.sort()
+            solved = True 
+            for (l,r) in zip(uuids, expected):
+                if not ( l == r ):
+                    solved = False 
+                    break 
+            if solved:
+                service_resolved_event.set()
+        
+if __name__ == "__main__":
+    m = BluetoothLib()
+    addr = "D0:14:11:20:1F:B3"
+    addr1 = "12:34:56:78:A0:B3"
+    m.ble_connect_case(addr)
+    m.bt_connect_hearing_aids(addr1)
+    m.ble_connect_hearing_aids(addr1)
+    import subprocess
+    output = subprocess.check_output(["busctl", "tree", "org.bluez"])
+    print(output.decode())
+    m.ble_disconnect_case(addr)
+    m.ble_disconnect_hearing_aids(addr1)
+    #m.ble_disconnect_hearing_aids("12:34:56:78:A0:B3")
+    m.quit()
+
+

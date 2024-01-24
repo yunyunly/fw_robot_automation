@@ -47,18 +47,15 @@ class ChargingCaseLib:
         Examples:
         | Connect Charging Case | D0:14:11:20:20:18 |
         """
-        Logger.info("Call Blue Connect Case")
-        return  self.blue.ble_connect_case(addr)
-        
+        return self.blue.ble_connect_case(addr)
 
-    def disconnect_charging_case(self,addr):
+    def disconnect_charging_case(self):
         """Disconnect charging case.  
         
         Examples:
         | Disconnect Charging Case |
         """
-        print("Call Blue Disconnect Case")
-        self.blue.ble_connect_case() 
+        self.blue.ble_disconnect_case() 
  
     def print_info(self):
         """Print common information of charging case via serial port  
