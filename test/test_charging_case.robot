@@ -2,8 +2,8 @@
 Documentation     Keywords(API) Test Cases for charging case
 Suite Setup       Connect Charging Case    D0:14:11:20:20:18
 Suite Teardown    Disconnect Charging Case
-Test Setup        Open Serial Port    Case   /dev/ttyACM0    115200
-Test Teardown     Close Serial Port    Case
+Test Setup        Serial Open Port    Case   /dev/ttyACM0    115200
+Test Teardown     Serial Close Port    Case
 Library           ../lib/ChargingCaseLib.py
 Library           ../lib/SerialLib.py
 

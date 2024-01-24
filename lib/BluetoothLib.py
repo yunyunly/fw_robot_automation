@@ -92,6 +92,13 @@ class BluetoothLib(object):
             self.bus.get_object("org.bluez", "/"), 
             "org.freedesktop.DBus.ObjectManager"
         )
+        dev_itf = dbus.Interface(self.adapter_obj, 'org.freedesktop.DBus.Properties')
+        dev_itf.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(False))
+        time.sleep(1)
+        print(dev_itf.Get("org.bluez.Adapter1", "Powered"))
+        dev_itf.Set('org.bluez.Adapter1', 'Powered', dbus.Boolean(True))
+        time.sleep(1)
+        print(dev_itf.Get("org.bluez.Adapter1", "Powered"))
         Console("Bluetooth Inited")
         return 
 
