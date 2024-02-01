@@ -15,7 +15,6 @@ Metadata          Robot Framework Version    6.1.1
 Library           ../lib/SerialLib.py
 Library           ../lib/BluetoothLib.py
 Library           ../lib/ChargingCaseLib.py
-Library           ../lib/PreludeControlLib.py
 Library           String
 Library           Collections
 
@@ -28,7 +27,6 @@ ${HA_BT_ADDR}     12:34:56:78:A0:B3    # 助听器BT地址
 ${HA_L_TTY_PORT}    /dev/ttyUSB3    # 助听器左耳串口端口
 ${HA_R_TTY_PORT}    /dev/ttyUSB4    # 助听器右耳串口端口
 ${HA_TTY_BAUDRATE}    1152000    # 助听器串口波特率
-${PRELUDE_ID}    2
 
 *** Test Cases ***
 Remark
@@ -283,9 +281,6 @@ Case pairing timeout
 
 *** Keywords ***
 Setup
-    Open Device    ${PRELUDE_ID} 
-    Charge    off
-    PreludeControlLib.Reset    off
     Serial Open Port    Case    ${CC_TTY_PORT}    ${CC_TTY_BAUDRATE}
     Serial Open Port    Left    ${HA_L_TTY_PORT}    ${HA_TTY_BAUDRATE}
     Serial Open Port    Right    ${HA_R_TTY_PORT}    ${HA_TTY_BAUDRATE}
@@ -297,7 +292,10 @@ Teardown
     Serial Close Port    Case
     Serial Close Port    Left
     Serial Close Port    Right
+    Case Close
+    Sleep    1s
     Disconnect Charging Case    ${CC_BLE_ADDR}
+    Disconnect    ${HA_BT_ADDR}
     BluetoothLib.Quit
 
 Read Case
