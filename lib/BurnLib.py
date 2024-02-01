@@ -64,6 +64,25 @@ class BurnLib:
         self.prelude.charge("on", device)
         time.sleep(0.2)
 
+    def __prelude_handshake_with_bus(self, device, bus:str="1", dev:str="1"):
+        """ Handshake with prelude.
+            Args:
+                device: device to burn, 'l' or 'r'
+        """
+        if self.prelude is None:
+            self.prelude = PreludeControlLib.PreludeControlLib()
+            self.prelude.open_device_with_bus(bus,dev)
+        self.prelude.reset("off", device)
+        time.sleep(0.5)
+        self.prelude.reset("on", device)
+        time.sleep(0.5)
+        self.prelude.reset("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("on", device)
+        time.sleep(0.2)
+
     def __burn_one_side(self, device:str, programmer:str, filename:str, bootloader:str, factory_section_bin:str, erase_chip:bool):
         """ Burn one side of orka device.
             Args:
@@ -140,6 +159,82 @@ class BurnLib:
             Info(f"Waiting for {d.upper()} prelude handshake...")
             time.sleep(1)
             self.__prelude_handshake(d,prelude_id=prelude_id)
+            Info(f"{d.upper()} prelude handshake done.")
+
+        self.return_code["l"] = None
+        self.return_code["r"] = None
+        while True:
+            for d in device:
+                if self.burning[d] == True:
+                    self.return_code[d] = self.burn_process[d].poll()
+                    stdout = self.burn_process[d].stdout.read().decode('ascii')
+                    stderr = self.burn_process[d].stderr.read().decode('ascii')
+                    Info(f"[{d.upper()}:]{stdout}")
+                    Debug(f"[{d.upper()}:]{stderr}")
+                    if self.return_code[d] is not None:
+                        self.burning[d] = False
+                        if self.return_code[d] != 0:
+                            raise RuntimeError(f"Burn failed. Return Code: {self.return_code[d]}")
+            if not any(self.burning.values()):
+                break
+        time.sleep(0.5)               #additional prelude commands to make sure has is on
+        self.prelude.charge("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("on", device)
+        time.sleep(0.2)
+        self.prelude.reset("on", device)
+        time.sleep(0.5)
+        self.prelude.reset("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("off", device)
+        return 0
+        
+    def burn_orka_with_bus(
+        self,
+        bus:str="1", 
+        dev:str="1",
+        device:str="lr",
+        programmer:str="programmer1600.bin",
+        filename:str="best1600_tws.bin",
+        bootloader:str="ota_boot_2700_20211216_5fca0c3e.bin",
+        erase_chip:str="erase_chip",
+        factory_section_bin:str="",
+    ):
+        """ Burn orka device.
+            Args:
+                device: device to burn, 'l' or 'r' or 'lr'
+                programmer: programmer bin file name
+                filename: firmware bin file name
+                bootloader: bootloader bin file name
+                erase_chip: erase chip before burn
+                factory_section_bin: factory section bin file name (bt/ble names and addresses)
+        """
+        device = device.lower()
+        self.programmer = programmer
+        self.filename = filename
+        self.bootloader = bootloader
+        self.erase_chip = erase_chip
+        if self.prelude is None:
+            self.prelude = PreludeControlLib.PreludeControlLib()
+            self.prelude.open_device_with_bus(bus,dev)
+        if "l" not in device and "r" not in device:
+            raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
+        self.prelude.charge("off", device)
+        time.sleep(0.5)
+        self.prelude.charge("on", device)
+        time.sleep(3)
+        for d in device:
+            self.__burn_one_side(
+                device=d,
+                programmer=programmer,
+                filename=filename,
+                bootloader=bootloader,
+                factory_section_bin=self.factory_section_bin[d] if factory_section_bin=="" else factory_section_bin,
+                erase_chip=True if erase_chip=="erase_chip" else False
+            )
+            Info(f"Waiting for {d.upper()} prelude handshake...")
+            time.sleep(1)
+            self.__prelude_handshake_with_bus(d,bus=bus,dev=dev)
             Info(f"{d.upper()} prelude handshake done.")
 
         self.return_code["l"] = None

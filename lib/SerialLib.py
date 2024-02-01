@@ -367,6 +367,7 @@ class SerialLib(object):
             raise Exception("Invalid tag")
         else:
             for i in tag_list:
+                self.serialDevices[i].logger.next=len(self.serialDevices[i].logger.cache) + 1
                 self.serialDevices[i].waiting_thread.start() if self.serialDevices[i].waiting_thread else None
 
     
@@ -506,6 +507,7 @@ class SerialLogger(object):
         if self.next < len(self.cache):
             ret = self.cache[self.next].val 
             self.next = self.next + 1 
+            print(ret)
         else:
             time.sleep(0.2)
         return ret 

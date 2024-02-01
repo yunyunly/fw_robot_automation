@@ -57,6 +57,15 @@ class PreludeControlLib:
 
         return True
     
+    def get_usb_device_descriptor(self, bus, device):
+        # Find the USB device by bus and device ID
+        dev = usb.core.find(bus=bus, address=device)
+        if dev:
+            # Get the device descriptor
+            return dev
+        else:
+            return None
+    
     def open_device(self, i:str="1"):
         if type(eval(i)) != int:
             raise TypeError
@@ -81,7 +90,34 @@ class PreludeControlLib:
         self.ft_handle.set_baudrate(62500)
         self.__communicate_ftdi(0xff, 0)
     
-    
+    def open_device_with_bus(self, bus:str="1", dev:str="1"):
+        # if type(eval(bus)) != int or type(eval(dev))!= int:
+        #     raise TypeError
+        # else:
+        #     bus_id = eval(bus.lstrip('0'))
+        #     dev_id = hex(eval(dev))
+            
+        # if index > len(self.usb_devices):
+        #     raise IndexError("Exceed the number of connected Prelude")
+        # device = self.usb_devices[index-1]
+        # Info(f"Opening Prelude: BUS:{device.bus} ADDRESS:{device.address}")
+        # print(f"Opening Prelude: BUS:{device.bus} ADDRESS:{device.address}")
+        # url=f"ftdi://ftdi:4232h:{bus_id}:{dev_id}/1"
+        try:
+            device = self.get_usb_device_descriptor(int(bus),int(dev))
+            self.ft_handle.open_bitbang_from_device(device)
+        except Exception as e:
+            Info(f"Open Prelude failed, raise error: {e}")
+            raise e
+        self.ft_handle.set_bitmode(0xFF, Ftdi.BitMode.BITBANG)
+        self.ft_handle.read_data_set_chunksize(4096)
+        self.ft_handle.write_data_set_chunksize(4096)
+        self.ft_handle.set_event_char(0, False)
+        self.ft_handle.set_latency_timer(16)
+        self.ft_handle.set_flowctrl("")
+        self.ft_handle.set_baudrate(62500)
+        self.__communicate_ftdi(0xff, 0)
+
     def charge(self, enable:str="on", device:str="lr"):
         device_pin = 0x00
         enable = enable.lower()

@@ -2,8 +2,8 @@
 Documentation     Keywords(API) Test Cases for App control HA
 Suite Setup       BoardSetUp
 Suite Teardown    BoardTearDown
-Test Setup        SerialSetUp
-Test Teardown     SerialTearDown
+Test Setup        Check Init Soc
+#Test Teardown     SerialTearDown
 
 #Library           ../lib/HearingAidLib.py
 Library           ../lib/SerialLib.py
@@ -12,8 +12,9 @@ Library           BuiltIn
 
 *** Variables ***
 @{aids_list}    Left    Right
-${prelude_id}    1
-${test_count}    1
+${bus_id}    1
+${dev_id}    1
+# ${test_count}    1
 ${s_port_l}    /dev/ttyUSB2
 ${s_port_r}    /dev/ttyUSB3
 ${d_port_l}    /dev/ttyUSB4
@@ -31,39 +32,166 @@ ${bt_cmd_l}    00010706${bt_address_l}
 ${bt_cmd_r}    00010706${bt_address_r} 
 
 *** Test Cases ***
-Check Factory Mode Test
-    Log To Console    Check Factory Mode  
-    Run Keyword If    ${factory_mode}    Check Factory Mode  
+Check Release And Initialization
+    Log To Console    Check Release And Initialization
+    Starton Device
+
+    # Serial Parallel Read Until Regex    Left    The Firmware rev is ([0-9]+)    timeout=${5}
+    Serial Parallel Read Until    Left    init success    timeout=${5}
+    Serial Parallel Read Until    Left    VERSO RELEASE MODE    timeout=${5}
+    Serial Parallel Read Until    Left    shutdown reason: echo not active    timeout=${10}
+
+    # Serial Parallel Read Until Regex    Right    The Firmware rev is ([0-9]+)    timeout=${5}
+    Serial Parallel Read Until    Right    init success    timeout=${5}
+    Serial Parallel Read Until    Right    VERSO RELEASE MODE    timeout=${5}
+    Serial Parallel Read Until    Right    shutdown reason: echo not active    timeout=${10}
     
- Check Release And Version Test 
-    FOR    ${index}   IN RANGE  ${test_count}  
-        Log To Console      The ${index}-th run   
-        Check Release And Version
-    END 
+    Serial Parallel Read Start    ${aids_list}  
 
-Check Charge And Shutdown Test 
-    FOR    ${index}   IN RANGE  ${test_count}  
-        Log To Console      The ${index}-th run 
-        Check Charge And Shutdown
-    END 
+    Reset Device 
+    ${ret}=  Serial Parallel Read Wait    ${aids_list}  
 
-Check Heartbeat And Shutdown Test 
-    FOR    ${index}   IN RANGE  ${test_count}  
-        Log To Console      The ${index}-th run 
-        Check Heartbeat And Shutdown
-    END 
+    # Log To Console    ${ret}[Left][0]
 
-Check Bluetooth Pairing Test 
-    FOR    ${index}   IN RANGE  ${test_count}  
-        Log To Console      The ${index}-th run 
-        Check Bluetooth Pairing
-    END
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Left][1]    None
+    Should Not Be Equal As Strings    ${ret}[Left][2]    None
 
-Check Box Status Test 
-    FOR    ${index}   IN RANGE  ${test_count}  
-        Log To Console      The ${index}-th run 
-        Check Box Status
-    END
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][1]    None
+    Should Not Be Equal As Strings    ${ret}[Right][2]    None
+    
+    #Already shutdown
+    Sleep     3s
+
+Check Heartbeat And Shutdown
+    Log To Console    Check Heartbeat And Shutdown
+    Starton Device 
+    Send Heartbeat
+
+    Serial Parallel Read Until  Left    shutdown reason: echo not active    timeout=${10}
+    Serial Parallel Read Until  Right   shutdown reason: echo not active    timeout=${10}
+    Serial Parallel Read Start    ${aids_list}
+    ${ret}=  Serial Parallel Read Wait   ${aids_list}
+    Should Be Equal As Strings    ${ret}[Left][0]    None
+    Should Be Equal As Strings    ${ret}[Right][0]    None
+
+    Serial Parallel Read Until  Left    shutdown reason: comm cmd  timeout=${5}
+    Serial Parallel Read Until  Right   shutdown reason: comm cmd  timeout=${5}
+    Serial Parallel Read Start    ${aids_list}
+
+    Shutdown Device 
+
+    ${ret}=  Serial Parallel Read Wait   ${aids_list}
+
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+    Sleep     3s
+
+Check Charge And Shutdown
+    Log To Console    Check Charge And Shutdown
+    Charge Device   
+    
+    Serial Parallel Read Until  Left    STILL CHARING, SHUTDOWN    timeout=${10}
+    Serial Parallel Read Until  Right   STILL CHARING, SHUTDOWN    timeout=${10}
+    
+    Serial Parallel Read Start    ${aids_list}
+    Reset Device 
+    Send Heartbeat
+    ${ret}=  Serial Parallel Read Wait   ${aids_list}
+
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+
+Check Bluetooth Pairing And Broadcast
+    Log To Console    Check Bluetooth Pairing And Broadcast
+    Starton Device 
+
+    Serial Parallel Read Until  Left    system_shutdown    timeout=${10}
+    Serial Parallel Read Until  Right   system_shutdown    timeout=${10}
+    Serial Parallel Read Start    ${aids_list}
+    
+    
+    Reset Device 
+    Send Heartbeat
+    #send ble/bt to each other 
+    Serial write hex        s_Left        ${ble_cmd_r} 
+    Serial write hex        s_Left        ${bt_cmd_r} 
+
+    Serial write hex        s_Right       ${ble_cmd_l} 
+    Serial write hex        s_Right       ${bt_cmd_l} 
+
+    ${ret}=    Serial Parallel Read Wait    ${aids_list}
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None    
+    #NOTICE: this test loop that might get the information for last loop in searial, using sleep to make the system shutdown eventaully.
+    #Need the information for bt pair trace.
+    Sleep    5s
+
+    Starton Device    
+    Send Heartbeat
+
+    Serial Parallel Read Until  Left    Access mode changed to 3    timeout=${10}
+    Serial Parallel Read Until  Right   Access mode changed to 3    timeout=${10}
+    Serial Parallel Read Start    ${aids_list}
+    Send Adv
+
+    ${ret}=  Serial Parallel Read Wait   ${aids_list}
+    Should Be True    '${ret}[Left][0]'!='None' or '${ret}[Right][0]'!='None'
+
+    Shutdown Device 
+    Sleep     3s
+
+Check Box Status
+    Log To Console    Check Box Status
+    Starton Device
+
+    Serial Parallel Read Until  Left    ori box state = IN_BOX_CLOSED,new = IN_BOX_OPEN    timeout=${5}
+    Serial Parallel Read Until  Right    ori box state = IN_BOX_CLOSED,new = IN_BOX_OPEN    timeout=${5}
+    Serial Parallel Read Until  Left    ori box state = IN_BOX_OPEN,new = OUT_BOX    timeout=${10}
+    Serial Parallel Read Until  Right    ori box state = IN_BOX_OPEN,new = OUT_BOX    timeout=${10}
+    Serial Parallel Read Until  Left    custom_ui:case open run complete    timeout=${10}
+    Serial Parallel Read Until  Right    custom_ui:case open run complete    timeout=${10}
+    Serial Parallel Read Until  Left    app_advertising_started   timeout=${10}
+    Serial Parallel Read Until  Right    app_advertising_started   timeout=${10}
+    Serial Parallel Read Start    ${aids_list}
+
+    Reset Device
+    Send Heartbeat
+    Send BoxOpen
+
+    ${ret}=  Serial Parallel Read Wait   ${aids_list}
+    Log    ${ret}
+    
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+    Should Not Be Equal As Strings    ${ret}[Left][1]    None
+    Should Not Be Equal As Strings    ${ret}[Right][1]    None
+    Should Not Be Equal As Strings    ${ret}[Left][2]    None
+    Should Not Be Equal As Strings    ${ret}[Right][2]    None
+    Should Be True    '${ret}[Left][3]'!='None' or '${ret}[Right][3]'!='None'
+
+    Sleep    5s
+
+    Serial Parallel Read Until  Left    ori box state = OUT_BOX,new = IN_BOX_OPEN    timeout=${10}
+    Serial Parallel Read Until  Right   ori box state = OUT_BOX,new = IN_BOX_OPEN    timeout=${10}
+    Serial Parallel Read Until  Left    ori box state = IN_BOX_OPEN,new = IN_BOX_CLOSED    timeout=${10}
+    Serial Parallel Read Until  Right   ori box state = IN_BOX_OPEN,new = IN_BOX_CLOSED    timeout=${10}
+
+    Serial Parallel Read Start    ${aids_list}
+    Send Heartbeat
+    Send BoxClose
+    ${ret}=  Serial Parallel Read Wait   ${aids_list}
+    Log    ${ret}
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+    Should Not Be Equal As Strings    ${ret}[Left][1]    None
+    Should Not Be Equal As Strings    ${ret}[Right][1]    None
+
+    Shutdown Device 
+    Sleep     3s
+
+
 
 *** Keywords ***
 BoardSetUp
@@ -78,10 +206,16 @@ BoardSetUp
     Log To Console    bt_address_l:${bt_address_l}
     Log To Console    bt_address_r:${bt_address_r}
 
-    Open Device    ${prelude_id}
+    Log To Console    bus_id:${bus_id}
+    Log To Console    device_id:${dev_id}
 
+    Open Device With Bus    ${bus_id}    ${dev_id}  
+
+    SerialSetUp
+    Run Keyword If    ${factory_mode}    Check Factory Mode  
 
 BoardTearDown
+    SerialTearDown
     Close Ftdi
 
 Check Init Soc   
@@ -131,178 +265,16 @@ Check Factory Mode
     Should Be Equal As Strings    ${ret}[Left][1]    None
     Should Be Equal As Strings    ${ret}[Right][1]    None
 
-
-
 SerialSetUp
     Serial Open Hearing Aids 1152000
     Serial Open Hearing Aids 9600
 
-    Check Init Soc 
-
+    # Check Init Soc 
 
 SerialTearDown
     Serial Close Hearing Aids 9600
     Serial Close Hearing Aids 1152000
-
-Check Release And Version
-    Log To Console    Check Release And Version
-    Starton Device
-
-    Serial Parallel Read Until Regex    Left    The Firmware rev is ([0-9]+)    timeout=${5}
-    Serial Parallel Read Until    Left    init success    timeout=${5}
-    Serial Parallel Read Until    Left    VERSO RELEASE MODE    timeout=${5}
-    Serial Parallel Read Until    Left    shutdown reason: echo not active    timeout=${10}
-
-    Serial Parallel Read Until Regex    Right    The Firmware rev is ([0-9]+)    timeout=${5}
-    Serial Parallel Read Until    Right    init success    timeout=${5}
-    Serial Parallel Read Until    Right    VERSO RELEASE MODE    timeout=${5}
-    Serial Parallel Read Until    Right    shutdown reason: echo not active    timeout=${10}
     
-    Serial Parallel Read Start    ${aids_list}  
-
-    Reset Device 
-    ${ret}=  Serial Parallel Read Wait    ${aids_list}  
-
-    Log To Console    ${ret}[Left][0]
-
-    Should Not Be Equal As Strings    ${ret}[Left][1]    None
-    Should Not Be Equal As Strings    ${ret}[Left][2]    None
-    Should Not Be Equal As Strings    ${ret}[Left][3]    None
-
-    Should Not Be Equal As Strings    ${ret}[Right][1]    None
-    Should Not Be Equal As Strings    ${ret}[Right][2]    None
-    Should Not Be Equal As Strings    ${ret}[Right][3]    None
-    
-    #Already shutdown
-    Sleep     3s
-
-Check Heartbeat And Shutdown
-    Log To Console    Check Heartbeat And Shutdown
-    Starton Device 
-    Send Heartbeat
-
-    Serial Parallel Read Until  Left    shutdown reason: echo not active    timeout=${10}
-    Serial Parallel Read Until  Right   shutdown reason: echo not active    timeout=${10}
-    Serial Parallel Read Start    ${aids_list}
-    ${ret}=  Serial Parallel Read Wait   ${aids_list}
-    Should Be Equal As Strings    ${ret}[Left][0]    None
-    Should Be Equal As Strings    ${ret}[Right][0]    None
-
-    Serial Parallel Read Until  Left    Start pmu shutdown  timeout=${5}
-    Serial Parallel Read Until  Right   Start pmu shutdown  timeout=${5}
-    Serial Parallel Read Start    ${aids_list}
-
-    Shutdown Device 
-
-    ${ret}=  Serial Parallel Read Wait   ${aids_list}
-
-    Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None
-    Sleep     3s
-
-Check Charge And Shutdown
-    Log To Console    Check Charge And Shutdown
-    Charge Device   
-    
-    Serial Parallel Read Until  Left    STILL CHARING, SHUTDOWN    timeout=${10}
-    Serial Parallel Read Until  Right   STILL CHARING, SHUTDOWN    timeout=${10}
-    
-    Serial Parallel Read Start    ${aids_list}
-    Reset Device 
-    Send Heartbeat
-    ${ret}=  Serial Parallel Read Wait   ${aids_list}
-
-    Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None
-
-
-Check Bluetooth Pairing 
-    Log To Console    Check Bluetooth Pairing 
-    Starton Device 
-
-    Serial Parallel Read Until  Left    system_shutdown    timeout=${10}
-    Serial Parallel Read Until  Right   system_shutdown    timeout=${10}
-    Serial Parallel Read Start    ${aids_list}
-    
-    
-    Reset Device 
-    Send Heartbeat
-    #send ble/bt to each other 
-    Serial write hex        s_Left        ${ble_cmd_r} 
-    Serial write hex        s_Left        ${bt_cmd_r} 
-
-    Serial write hex        s_Right       ${ble_cmd_l} 
-    Serial write hex        s_Right       ${bt_cmd_l} 
-
-    ${ret}=    Serial Parallel Read Wait    ${aids_list}
-    Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None
-    
-    Serial Parallel Read Until  Left    Access mode changed to 3    timeout=${15}
-    Serial Parallel Read Until  Right   Access mode changed to 3    timeout=${15}
-
-    Serial Parallel Read Start    ${aids_list}
-    
-    #NOTICE: this test loop that might get the information for last loop in searial, using sleep to make the system shutdown eventaully.
-    #Need the information for bt pair trace.
-    
-    Sleep    5s
-    Starton Device
-    Send Heartbeat
-    Send Adv
-
-    ${ret}=  Serial Parallel Read Wait   ${aids_list}
-    Should Be True    '${ret}[Left][0]'!='None' or '${ret}[Right][0]'!='None'
-    Shutdown Device 
-    Sleep     3s
-
-Check Box Status
-    Log To Console    Check Box Status
-    Serial Parallel Read Until  Left    ori box state = IN_BOX_CLOSED,new = IN_BOX_OPEN    timeout=${5}
-    Serial Parallel Read Until  Right    ori box state = IN_BOX_CLOSED,new = IN_BOX_OPEN    timeout=${5}
-    Serial Parallel Read Until  Left    ori box state = IN_BOX_OPEN,new = OUT_BOX    timeout=${5}
-    Serial Parallel Read Until  Right    ori box state = IN_BOX_OPEN,new = OUT_BOX    timeout=${5}
-    Serial Parallel Read Until  Left    custom_ui:case open run complete    timeout=${20}
-    Serial Parallel Read Until  Right    custom_ui:case open run complete    timeout=${20}
-    Serial Parallel Read Until  Left    app_advertising_started   timeout=${10}
-    Serial Parallel Read Until  Right    app_advertising_started   timeout=${10}
-
-    Starton Device 
-    Serial Parallel Read Start    ${aids_list}
-    Reset Device 
-    Send BoxOpen
-    Send Heartbeat
-    ${ret}=  Serial Parallel Read Wait   ${aids_list}
-
-
-    Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None
-    Should Not Be Equal As Strings    ${ret}[Left][1]    None
-    Should Not Be Equal As Strings    ${ret}[Right][1]    None
-    Should Not Be Equal As Strings    ${ret}[Left][2]    None
-    Should Not Be Equal As Strings    ${ret}[Right][2]    None
-    Should Be True    '${ret}[Left][3]'!='None' or '${ret}[Right][3]'!='None'
-    
-    Sleep    5s
-
-    Serial Parallel Read Until  Left    ori box state = OUT_BOX,new = IN_BOX_OPEN    timeout=${10}
-    Serial Parallel Read Until  Right   ori box state = OUT_BOX,new = IN_BOX_OPEN    timeout=${10}
-    Serial Parallel Read Until  Left    ori box state = IN_BOX_OPEN,new = IN_BOX_CLOSED    timeout=${10}
-    Serial Parallel Read Until  Right   ori box state = IN_BOX_OPEN,new = IN_BOX_CLOSED    timeout=${10}
-
-    Serial Parallel Read Start    ${aids_list}
-    Send Heartbeat
-    Send BoxClose
-    ${ret}=  Serial Parallel Read Wait   ${aids_list}
-
-    Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None
-    Should Not Be Equal As Strings    ${ret}[Left][1]    None
-    Should Not Be Equal As Strings    ${ret}[Right][1]    None
-    Shutdown Device
-    Sleep     3s
-    
-
 Serial Open Hearing Aids 9600
     Serial Open Port    s_Left     ${s_port_l}    9600
     Serial Open Port    s_Right    ${s_port_r}    9600
