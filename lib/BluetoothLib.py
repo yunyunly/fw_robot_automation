@@ -368,6 +368,17 @@ class BluetoothLib:
             return get_if_connected(self.object_manager, device_path)
         else:
             return False
+        
+    def addr_remove_colon(self,dev_addr:str):
+        """given a colon seperated bluetooth addres, return a string of the address without colon"""
+        ble_address_without_colons = dev_addr.replace(':', '')
+        return ble_address_without_colons
+
+    def addr_insert_colon(self,dev_addr:str):
+        """given a bluetooth adddress string without colon, return the address with colon seperation"""
+        ble_address_with_colons = ':'.join([dev_addr[i:i+2] for i in range(0, len(dev_addr), 2)])
+        return ble_address_with_colons
+
 
 def interfaces_added(path, interfaces):
     # interfaces is an array of dictionary entries
