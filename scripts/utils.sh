@@ -44,14 +44,14 @@ bus_table[7]=1
 bus_table[8]=1
 
 declare -A device_table
-device_table[1]=93
-device_table[2]=91
-device_table[3]=89
+device_table[1]=95
+device_table[2]=90
+device_table[3]=94
 device_table[4]=87
-device_table[5]=85
-device_table[6]=83
-device_table[7]=81
-device_table[8]=79
+device_table[5]=92
+device_table[6]=84
+device_table[7]=96
+device_table[8]=106
 
 declare -A bt_addr_table
 bt_addr_table[1]=19
@@ -71,7 +71,7 @@ status_table[4]=1
 status_table[5]=1
 status_table[6]=0
 status_table[7]=1
-status_table[8]=0
+status_table[8]=1
 # declare -A s_port_l_table
 # s_port_l_table[0]="/dev/ttyUSB6"
 # s_port_l_table[1]="/dev/ttyUSB13"

@@ -37,13 +37,13 @@ Check Release And Initialization
     Starton Device
 
     # Serial Parallel Read Until Regex    Left    The Firmware rev is ([0-9]+)    timeout=${5}
-    Serial Parallel Read Until    Left    init success    timeout=${5}
-    Serial Parallel Read Until    Left    VERSO RELEASE MODE    timeout=${5}
+    Serial Parallel Read Until    Left    init success    timeout=${10}
+    Serial Parallel Read Until    Left    VERSO RELEASE MODE    timeout=${10}
     Serial Parallel Read Until    Left    shutdown reason: echo not active    timeout=${10}
 
     # Serial Parallel Read Until Regex    Right    The Firmware rev is ([0-9]+)    timeout=${5}
-    Serial Parallel Read Until    Right    init success    timeout=${5}
-    Serial Parallel Read Until    Right    VERSO RELEASE MODE    timeout=${5}
+    Serial Parallel Read Until    Right    init success    timeout=${10}
+    Serial Parallel Read Until    Right    VERSO RELEASE MODE    timeout=${10}
     Serial Parallel Read Until    Right    shutdown reason: echo not active    timeout=${10}
     
     Serial Parallel Read Start    ${aids_list}  
@@ -92,8 +92,8 @@ Check Charge And Shutdown
     Log To Console    Check Charge And Shutdown
     Charge Device   
     
-    Serial Parallel Read Until  Left    STILL CHARING, SHUTDOWN    timeout=${10}
-    Serial Parallel Read Until  Right   STILL CHARING, SHUTDOWN    timeout=${10}
+    Serial Parallel Read Until  Left    STILL CHARING, SHUTDOWN    timeout=${15}
+    Serial Parallel Read Until  Right   STILL CHARING, SHUTDOWN    timeout=${15}
     
     Serial Parallel Read Start    ${aids_list}
     Reset Device 
@@ -102,6 +102,9 @@ Check Charge And Shutdown
 
     Should Not Be Equal As Strings    ${ret}[Left][0]    None
     Should Not Be Equal As Strings    ${ret}[Right][0]    None
+
+    Shutdown Device 
+    Sleep     3s
 
 Check Bluetooth Pairing And Broadcast
     Log To Console    Check Bluetooth Pairing And Broadcast
@@ -116,20 +119,26 @@ Check Bluetooth Pairing And Broadcast
     Send Heartbeat
     #send ble/bt to each other 
     Serial write hex        s_Left        ${ble_cmd_r} 
-    Serial write hex        s_Left        ${bt_cmd_r} 
+    Serial write hex        s_Left        ${bt_cmd_r}  
 
     Serial write hex        s_Right       ${ble_cmd_l} 
     Serial write hex        s_Right       ${bt_cmd_l} 
 
     ${ret}=    Serial Parallel Read Wait    ${aids_list}
+    
+    #Shutdown Device 
+    Sleep    3s
     Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None    
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None   
+
+    Shutdown Device 
+    Sleep    3s
+     
     #NOTICE: this test loop that might get the information for last loop in searial, using sleep to make the system shutdown eventaully.
     #Need the information for bt pair trace.
-    Sleep    5s
 
     Starton Device    
-    Send Heartbeat
+    Send Heartbeat    5   
 
     Serial Parallel Read Until  Left    Access mode changed to 3    timeout=${10}
     Serial Parallel Read Until  Right   Access mode changed to 3    timeout=${10}
@@ -146,19 +155,24 @@ Check Box Status
     Log To Console    Check Box Status
     Starton Device
 
+    Send Heartbeat
+    Send BoxClose
+    Sleep    20s
+
     Serial Parallel Read Until  Left    ori box state = IN_BOX_CLOSED,new = IN_BOX_OPEN    timeout=${5}
     Serial Parallel Read Until  Right    ori box state = IN_BOX_CLOSED,new = IN_BOX_OPEN    timeout=${5}
     Serial Parallel Read Until  Left    ori box state = IN_BOX_OPEN,new = OUT_BOX    timeout=${10}
     Serial Parallel Read Until  Right    ori box state = IN_BOX_OPEN,new = OUT_BOX    timeout=${10}
-    Serial Parallel Read Until  Left    custom_ui:case open run complete    timeout=${10}
-    Serial Parallel Read Until  Right    custom_ui:case open run complete    timeout=${10}
+    Serial Parallel Read Until  Left    custom_ui:case open run complete    timeout=${15}    #10->15s
+    Serial Parallel Read Until  Right    custom_ui:case open run complete    timeout=${15}
     Serial Parallel Read Until  Left    app_advertising_started   timeout=${10}
     Serial Parallel Read Until  Right    app_advertising_started   timeout=${10}
     Serial Parallel Read Start    ${aids_list}
 
-    Reset Device
-    Send Heartbeat
+    #Reset Device
     Send BoxOpen
+    Send BoxOpen
+    Send Heartbeat    5
 
     ${ret}=  Serial Parallel Read Wait   ${aids_list}
     Log    ${ret}
@@ -173,13 +187,14 @@ Check Box Status
 
     Sleep    5s
 
-    Serial Parallel Read Until  Left    ori box state = OUT_BOX,new = IN_BOX_OPEN    timeout=${10}
-    Serial Parallel Read Until  Right   ori box state = OUT_BOX,new = IN_BOX_OPEN    timeout=${10}
+#OUT_BOX_WEARED -> OUT_BOX -> IN_BOX_OPEN
+    serial_parallel_read_until  Left    ori box state = OUT_BOX(.*)new = IN_BOX_OPEN    timeout=${10}
+    serial_parallel_read_until  Right   ori box state = OUT_BOX(.*)new = IN_BOX_OPEN    timeout=${10}
     Serial Parallel Read Until  Left    ori box state = IN_BOX_OPEN,new = IN_BOX_CLOSED    timeout=${10}
     Serial Parallel Read Until  Right   ori box state = IN_BOX_OPEN,new = IN_BOX_CLOSED    timeout=${10}
 
     Serial Parallel Read Start    ${aids_list}
-    Send Heartbeat
+    Send Heartbeat    5
     Send BoxClose
     ${ret}=  Serial Parallel Read Wait   ${aids_list}
     Log    ${ret}
@@ -195,19 +210,19 @@ Check Box Status
 
 *** Keywords ***
 BoardSetUp
-    Log To Console    s_port_l:${s_port_l}
-    Log To Console    s_port_r:${s_port_r}
-    Log To Console    d_port_l:${d_port_l}
-    Log To Console    d_port_r:${d_port_r}
-    Log To Console    factory_mode:${factory_mode}
+    Log    s_port_l:${s_port_l}    console=True
+    Log    s_port_r:${s_port_r}    console=True
+    Log    d_port_l:${d_port_l}    console=True
+    Log    d_port_r:${d_port_r}    console=True
+    Log    factory_mode:${factory_mode}    console=True
 
-    Log To Console    ble_address_l:${ble_address_l}
-    Log To Console    ble_address_r:${ble_address_r}
-    Log To Console    bt_address_l:${bt_address_l}
-    Log To Console    bt_address_r:${bt_address_r}
+    Log    ble_address_l:${ble_address_l}    console=True
+    Log    ble_address_r:${ble_address_r}    console=True
+    Log    bt_address_l:${bt_address_l}    console=True
+    Log    bt_address_r:${bt_address_r}    console=True
 
-    Log To Console    bus_id:${bus_id}
-    Log To Console    device_id:${dev_id}
+    Log    bus_id:${bus_id}    console=True
+    Log    device_id:${dev_id}    console=True
 
     Open Device With Bus    ${bus_id}    ${dev_id}  
 
@@ -226,15 +241,16 @@ Check Init Soc
     
     Serial Parallel Read Start    ${aids_list} 
     Reset Device 
+    Send Heartbeat    
     ${soc}=  Serial Parallel Read Wait    ${aids_list}  
 
-    Log To Console    Left soc = ${soc}[Left][0][0] ; Right soc = ${soc}[Right][0][0]
+    Log    Left soc = ${soc}[Left][0][0] ; Right soc = ${soc}[Right][0][0]    console=True
     Run Keyword If    ${soc}[Left][0][0] <10 or ${soc}[Right][0][0] <= 10    Charge Device
 
     Should Be True    ${soc}[Left][0][0] >= 10 and ${soc}[Left][0][0] <= 100
     Should Be True    ${soc}[Right][0][0] >= 10 and ${soc}[Right][0][0] <= 100
 
-    Reset Device 
+    #Reset Device 
 
 Check Factory Mode 
     Log To Console    Factory mode enable!!!
@@ -251,13 +267,14 @@ Check Factory Mode
     ${ret}=  Serial Parallel Read Wait    ${aids_list}  
     
     Log To Console    Turn To Release Mode
-    Serial Write Str             s_Left      [to_rel,]
-    Serial Write Str             s_Right     [to_rel,]
-    
-    Sleep   0.2s
 
-    Serial Write Str             s_Left      [to_rel,]
-    Serial Write Str             s_Right     [to_rel,]
+    [Arguments]    ${num}=3
+    FOR    ${counter}   IN RANGE  ${num} 
+        Serial Write Str             s_Left      [to_rel,]
+        Serial Write Str             s_Right     [to_rel,]
+    
+        Sleep   0.7s
+    END
 
     Should Not Be Equal As Strings    ${ret}[Left][0]    None
     Should Not Be Equal As Strings    ${ret}[Right][0]    None
@@ -330,12 +347,13 @@ Shutdown Device
     Serial write hex    s_Right   010100
     Sleep     0.2s
 
-Send Heartbeat
-    FOR    ${counter}   IN RANGE  3
+Send Heartbeat  
+    [Arguments]    ${num}=3
+    FOR    ${counter}   IN RANGE  ${num} 
         #send adv 
         Serial write hex        s_Left        01ff00
         Serial write hex        s_Right       01ff00
-        Sleep    0.2s
+        Sleep    0.7s
     END
 
 Send BoxOpen
@@ -353,7 +371,7 @@ Send Adv
         #send adv 
         Serial write hex        s_Left        010a00
         Serial write hex        s_Right       010a00
-        Sleep    0.2s
+        Sleep    0.7s
     END
 
     

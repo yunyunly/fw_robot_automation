@@ -35,17 +35,17 @@ Burn Orka Two With Bus And Device
     [Documentation]     Burn firmware to hearing aids
     [Tags]              Firmware
 
-    Log To Console    s_port_l:${port_l}
-    Log To Console    s_port_r:${port_r}
-    Log To Console    d_port_l:${d_port_l}
-    Log To Console    d_port_r:${d_port_r}
-    Log To Console    program_bin:${program_bin}
-    Log To Console    bes_bin:${bes_bin}
-    Log To Console    ota_bin:${ota_bin}
-    Log To Console    factory_file_l:${factory_file_l}
-    Log To Console    factory_file_r:${factory_file_r}
-    Log To Console    bus_id:${bus_id}
-    Log To Console    device_id:${dev_id}
+    Log    s_port_l:${port_l}    console=True
+    Log    s_port_r:${port_r}    console=True
+    Log    d_port_l:${d_port_l}    console=True
+    Log    d_port_r:${d_port_r}    console=True
+    Log    program_bin:${program_bin}    console=True
+    Log    bes_bin:${bes_bin}    console=True
+    Log    ota_bin:${ota_bin}    console=True
+    Log    factory_file_l:${factory_file_l}    console=True
+    Log    factory_file_r:${factory_file_r}    console=True
+    Log    bus_id:${bus_id}    console=True
+    Log    device_id:${dev_id}    console=True
 
     Update Ha Port      ${port_l}    ${port_r}
     ${ret}=    Burn Orka With Bus    ${bus_id}    ${dev_id}    l    ${program_bin}    ${bes_bin}     ${ota_bin}    erase_chip    ${factory_file_l}
