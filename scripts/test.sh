@@ -1,7 +1,9 @@
 #!/bin/bash
 # set -x
 
-test_root_folder="/home/test/testing_richard"
+test_root_folder=$(pwd)
+
+echo "test_root_dir:${test_root_folder}"
 
 pushd ${test_root_folder}
 source ${test_root_folder}/scripts/utils.sh
