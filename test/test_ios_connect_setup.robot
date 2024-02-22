@@ -3,6 +3,7 @@ Library    ../lib/SerialLib.py
 Library    ../lib/PreludeControlLib.py
 Library    DateTime
 Suite Setup    Setup
+Test Setup        Test Set Up
 Suite Teardown    Teardown
 
 *** Variables ***
@@ -15,6 +16,7 @@ ${d_port_r}=       /dev/ttyUSB5
 ${prelude_id}    1
 ${bus_id}    1
 ${dev_id}    1
+${test_id}    1
 ${count}    1
 
 ${ble_address_l}    121233565681
@@ -45,21 +47,31 @@ Setup
 
     Reset Device
 
-    Send Heartbeat
-    # #send ble/bt to each other 
-    # Serial write hex        s_Left        ${ble_cmd_r} 
-    # Serial write hex        s_Left        ${bt_cmd_r}  
+    Send Heartbeat    4
 
-    # Serial write hex        s_Right       ${ble_cmd_l} 
-    # Serial write hex        s_Right       ${bt_cmd_l} 
+    Send Comm Test
+    Send Request Bt Addr
+    #send ble/bt to each other 
+    Serial write hex        s_Left        ${bt_cmd_r}  
+    Serial write hex        s_Right       ${bt_cmd_l} 
 
-    # Sleep    10s
+    Sleep    0.5s
+    Serial write hex        s_Left        ${ble_cmd_r} 
+    Serial write hex        s_Right       ${ble_cmd_l} 
+    
+    Sleep    0.5s
+    Send Heartbeat    
 
-    # Starton Device 
-    # Send Heartbeat    5
+    Sleep    10s
+
+    Starton Device 
+    Send Heartbeat    5
 
     Sleep    3s
 
+Test Set Up
+    Log    test_id:${test_id}    console=True
+    
 Send Heartbeat  
     [Arguments]    ${num}=3
     FOR    ${counter}   IN RANGE  ${num} 
@@ -99,6 +111,16 @@ Reset Device
 Send BoxOpen
     Serial write hex        s_Left        010200
     Serial write hex        s_Right       010200
+    Sleep    0.2s 
+
+Send Comm Test
+    Serial write hex        s_Left        010000
+    Serial write hex        s_Right       010000
+    Sleep    0.2s 
+
+Send Request Bt Addr
+    Serial write hex        s_Left        010600
+    Serial write hex        s_Right       010600
     Sleep    0.2s 
 
 Shutdown Device 

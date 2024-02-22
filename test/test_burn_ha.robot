@@ -2,6 +2,7 @@
 Documentation     Test case for burning hearing aids l&r
 Library           ../lib/BurnLib.py
 Library           ../lib/SerialLib.py
+Test Setup        Test Set Up
 
 *** Variables ***
 ${port_l}    /dev/ttyUSB2
@@ -12,6 +13,7 @@ ${prelude_id}    -1
 
 ${bus_id}    1
 ${dev_id}    1
+${test_id}    1
 
 ${factory_file_l}    left.bin
 ${factory_file_r}    right.bin
@@ -55,6 +57,8 @@ Burn Orka Two With Bus And Device
 
 
     #Check Version
+Test Set Up
+    Log    test_id:${test_id}    console=True
 
 *** Test Cases ***
 Burn Orka Two

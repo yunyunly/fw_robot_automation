@@ -13,7 +13,12 @@ show_help() {
   echo "Usage: $0 [--id <id>] [--次数 <次数>] [--test_case <test_case>]"
   echo "  --id #_id             指定ID参数, para: 1-8/all"
   echo "  --count #_count       指定次数参数"
-  echo "  --test_suite          指定test_suite参数, para: 0(onlycharging) , 1(burning), 2(basic test), 4(bluetooth test), 8(ios bluetooth test)"
+  echo "  --test_suite          指定test_suite参数, para: 
+                                0(onlycharging)
+                                1(burning)
+                                2(basic test) 
+                                4(bluetooth test), 
+                                8(ios bluetooth test)"
   echo "  --bin                 指定烧录bin文件,只有在测试烧录时才会check"
   echo "  --output              输出所有日志到output"
   echo "  --clean               清除所有测试日志"
@@ -42,6 +47,7 @@ output_folder="${test_root_folder}/logs/"
 charge_ha_robot_path="${test_root_folder}/test/charge_ha.robot"
 burn_ha_robot_path="${test_root_folder}/test/test_burn_ha.robot"
 basic_test_robot_path="${test_root_folder}/test/test_basic.robot"
+bluetooth_test_robot_path="${test_root_folder}/test/test_freq.robot"
 ios_connect_robot_path="${test_root_folder}/test/test_ios_connect_setup.robot"
 
 factory=0
@@ -174,7 +180,7 @@ charging_ha()
   id="$1"
   bus_id="${bus_table[$id]}"
   dev_id="${device_table[$id]}"
-  robot -v bus_id:${bus_id} -v dev_id:${dev_id} "${charge_ha_robot_path}"
+  robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} "${charge_ha_robot_path}"
 }
 
 burn_ha_test()
@@ -215,7 +221,7 @@ burn_ha_test()
     output="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.xml"
     log="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.html"
 
-    robot -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+    robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
     -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} --output "${output}" --log "${log}" "${burn_ha_robot_path}"
 
   done
@@ -248,10 +254,13 @@ basic_test()
       #   break
       # fi
       echo test count: ${i}:${count}
+      if [ $i -gt 1 ]; then
+        factory=0
+      fi
       output="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v factory_mode:${factory} -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v factory_mode:${factory} -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
       --output "${output}" --log "${log}" "${basic_test_robot_path}"
   done
@@ -281,16 +290,13 @@ bluetooth_test()
   for ((i=1; i<=count; i++)); do
       echo test count: ${i}:${count}
       output="${log_dir}/${name}_${bt_addr_table[$id]}_${i}.xml"
-      log="${log_dir}/${name}_${bt_addr_table[$id]}_${i}.html"
+      log="${log_dir}/${name}_${bt_addr_table[$id]}_${i}_log.html"
+      report="${log_dir}/${name}_${bt_addr_table[$id]}_${i}_report.html"
 
-      robot -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
-      -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" "${bluetooth_test_robot_path}"
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
+      --output "${output}" --log "${log}" --report "${report}" "${bluetooth_test_robot_path}"
   done
-  cp ${log_dir}/*.xml ${total_folder}
-  if [ "$(ls -A ${serial_logs_folder}/*_${bt_addr_table[$id]}.txt)" ]; then
-    mv ${serial_logs_folder}/*_${bt_addr_table[$id]}.txt ${serial_folder}
-  fi
-  rebot --name Combined --log ${summary_folder}/${name}_${bt_addr_table[$id]}_log.html --report ${summary_folder}/${name}_${bt_addr_table[$id]}_report.html ${log_dir}/${name}_${bt_addr_table[$id]}*.xml
 }
 
 burn_ha_and_basic_test()
@@ -323,13 +329,13 @@ burn_ha_and_basic_test()
       output="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} --output "${output}" --log "${log}" "${burn_ha_robot_path}"
 
       output="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v factory_mode:1 -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v factory_mode:1 -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
       --output "${output}" --log "${log}" "${basic_test_robot_path}"
 
@@ -363,11 +369,12 @@ ios_bluetooth_test()
       # echo test count: ${i}:${count}
 
   output="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}.xml"
-  log="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}.html"
+  log="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}_log.html"
+  report="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}_report.html"
 
-  robot -v count:${count} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+  robot -v test_id:${id} -v count:${count} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
   -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
-  --output "${output}" --log "${log}" "${ios_connect_robot_path}"
+  --output "${output}" --log "${log}" --report "${report}" "${ios_connect_robot_path}"
 
   # done
 }
@@ -399,20 +406,20 @@ all_test()
       output="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} --output "${output}" --log "${log}" "${burn_ha_robot_path}"
 
       output="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v factory_mode:1 -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v factory_mode:1 -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
       --output "${output}" --log "${log}" "${basic_test_robot_path}"
 
       output="${log_dir}/bluetooth_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/bluetooth_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" "${bluetooth_test_robot_path}"
 
   done
@@ -466,14 +473,14 @@ for id in "${id_list[@]}"; do
     pid_list[$id]=$!
   # elif [ "${test_suite}" = 5 ]; then        #burnin+freq_test
   # elif [ "${test_suite}" = 6 ]; then        #basic_test+freq_test
-  elif [ "${test_suite}" = 7 ]; then        #all
-    if [ ! -f "$bin" ]; then
-      echo "Burn file: [$bin] does not exist, Exit."
-      exit
-    fi 
-    name="all_test"
-    all_test "$id" "$bin" &
-    pid_list[$id]=$!
+  # elif [ "${test_suite}" = 7 ]; then        #all
+  #   if [ ! -f "$bin" ]; then
+  #     echo "Burn file: [$bin] does not exist, Exit."
+  #     exit
+  #   fi 
+  #   name="all_test"
+  #   all_test "$id" "$bin" &
+  #   pid_list[$id]=$!
   elif [ "${test_suite}" = 8 ]; then        #all
     name="ios_bluetooth_test"
     ios_bluetooth_test "$id" &

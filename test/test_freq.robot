@@ -2,6 +2,7 @@
 Documentation     Keywords(API) Test Cases for App control HA
 
 Suite Setup       Set Up
+Test Setup        Test Set Up
 Suite Teardown    Tear Down
 
 Library           ../lib/PreludeControlLib.py
@@ -13,6 +14,9 @@ Library           BuiltIn
 
 *** Variables ***
 ${prelude_id}=    1
+${bus_id}    1  
+${dev_id}    1
+${test_id}    1
 ${s_port_l}    /dev/ttyUSB2
 ${s_port_r}    /dev/ttyUSB3
 ${d_port_l}    /dev/ttyUSB4
@@ -23,30 +27,57 @@ ${ble_address_r}    121233565681
 ${bt_address_l}    121233565680
 ${bt_address_r}    121233565681
 
+${ble_cmd_l}    00010906${ble_address_l} 
+${ble_cmd_r}    00010906${ble_address_r} 
+${bt_cmd_l}    00010706${bt_address_l} 
+${bt_cmd_r}    00010706${bt_address_r} 
 @{aids_list}    Left    Right
 
 *** Test Cases ***
 Connect Bluetooth
 # Suite set up would cause error related to library __init__ and __del__. Thus placed in test case.
-    Log To Console    test vars: ${prelude_id} ${s_port_l} ${s_port_r} ${d_port_l} ${d_port_r} ${ble_address_l} ${ble_address_r}
+    Log    test vars: ${bus_id} ${dev_id} ${s_port_l} ${s_port_r} ${d_port_l} ${d_port_r} ${ble_address_l} ${ble_address_r}    console=True
     #init prelude board
     Starton Device 
+
+    Reset Device
+
+    Send Heartbeat
+    #send ble/bt to each other 
+    Serial write hex        s_Left        ${ble_cmd_r} 
+    Serial write hex        s_Left        ${bt_cmd_r}  
+
+    Serial write hex        s_Right       ${ble_cmd_l} 
+    Serial write hex        s_Right       ${bt_cmd_l} 
+
+    Sleep    10s
+
+    Starton Device 
+    Send Heartbeat    5
+
+    Sleep    3s
+
     Send Heartbeat
     Send BoxOpen
-    Send Adv
 
-    FOR    ${counter}   IN RANGE  3
-    Log To Console    Connect bluetooth for ${counter}-th try
+    FOR    ${bt_counter}   IN RANGE  3
+    Log To Console    Connect bredr for ${bt_counter}-th try
+    Send Adv
+    Sleep    3s
     ${ret}=    Connect Hearing Aids Classic    ${ble_address_r}
     Log To Console    Connect bredr status: ${ret}
-    Continue For Loop If    ${ret} == False
-    Sleep    5s
+    Run Keyword If    ${ret} == True    Exit For Loop
+    Sleep    3s
+    END
+    Should Be True    ${ret} == True
+    
+    FOR    ${ble_counter}   IN RANGE  3
+    Log To Console    Connect le for ${ble_counter}-th try
    	${ret}=    Connect Hearing Aids      ${ble_address_r}
     Log To Console    Connect le status: ${ret}
     Run Keyword If    ${ret} == True    Exit For Loop
     Sleep    3s
     END 
-
     Should Be True    ${ret} == True
 
 Read General Status
@@ -152,25 +183,30 @@ Audio play hfp
     Log Mcu Freq     M55 
 
 *** Keywords ***
+Test Set Up
+    Log    test_id:${test_id}    console=True
+
 Set Up
     ${tmp}=    Addr Insert Colon   ${ble_address_r}
     Set Suite Variable    ${ble_address_r}    ${tmp}
     Log To Console    Set Up
-    Open Device    ${prelude_id}
+    Open Device With Bus    ${bus_id}    ${dev_id} 
     SerialSetUp
+    Init
 
 
 Tear Down
     Log To Console    Tear Down
     Disconnect Hearing Aids    ${ble_address_r}
-    Shutdown Device
+    Quit
+    # Shutdown Device
     SerialTearDown
     Close Ftdi
+    Sleep    5s
 
 SerialSetUp
     Serial Open Hearing Aids 1152000
     Serial Open Hearing Aids 9600
-
     Check Init Soc 
 
 
@@ -219,7 +255,7 @@ Starton Device
     Charge    On    lr
     Sleep     0.5s
     Charge    Off    lr
-    Sleep    1s
+    Sleep    2s
 
     #check if open 
  #   Serial Parallel Read Until    Left      The Firmware rev is␊    timeout=${10}
@@ -246,13 +282,15 @@ Shutdown Device
     Serial write hex    s_Right   010100
     Sleep     0.2s
 
-Send Heartbeat
-    FOR    ${counter}   IN RANGE  3
+Send Heartbeat  
+    [Arguments]    ${num}=3
+    FOR    ${counter}   IN RANGE  ${num} 
         #send adv 
         Serial write hex        s_Left        01ff00
         Serial write hex        s_Right       01ff00
-        Sleep    0.2s
+        Sleep    0.7s
     END
+
 
 Send BoxOpen
     Serial write hex        s_Left        010200

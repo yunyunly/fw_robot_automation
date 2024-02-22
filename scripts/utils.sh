@@ -69,7 +69,7 @@ status_table[2]=1
 status_table[3]=1
 status_table[4]=1
 status_table[5]=1
-status_table[6]=0
+status_table[6]=1
 status_table[7]=1
 status_table[8]=1
 # declare -A s_port_l_table

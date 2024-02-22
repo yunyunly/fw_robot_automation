@@ -2,7 +2,7 @@
 Documentation     Keywords(API) Test Cases for App control HA
 Suite Setup       BoardSetUp
 Suite Teardown    BoardTearDown
-Test Setup        Check Init Soc
+Test Setup        Test Set Up
 #Test Teardown     SerialTearDown
 
 #Library           ../lib/HearingAidLib.py
@@ -14,6 +14,7 @@ Library           BuiltIn
 @{aids_list}    Left    Right
 ${bus_id}    1
 ${dev_id}    1
+${test_id}    1
 # ${test_count}    1
 ${s_port_l}    /dev/ttyUSB2
 ${s_port_r}    /dev/ttyUSB3
@@ -33,7 +34,7 @@ ${bt_cmd_r}    00010706${bt_address_r}
 
 *** Test Cases ***
 Check Release And Initialization
-    Log To Console    Check Release And Initialization
+    Log    Check Release And Initialization    console=true
     Starton Device
 
     # Serial Parallel Read Until Regex    Left    The Firmware rev is ([0-9]+)    timeout=${5}
@@ -65,7 +66,7 @@ Check Release And Initialization
     Sleep     3s
 
 Check Heartbeat And Shutdown
-    Log To Console    Check Heartbeat And Shutdown
+    Log    Check Heartbeat And Shutdown    console=True
     Starton Device 
     Send Heartbeat
 
@@ -89,7 +90,7 @@ Check Heartbeat And Shutdown
     Sleep     3s
 
 Check Charge And Shutdown
-    Log To Console    Check Charge And Shutdown
+    Log    Check Charge And Shutdown    console=True
     Charge Device   
     
     Serial Parallel Read Until  Left    STILL CHARING, SHUTDOWN    timeout=${15}
@@ -107,7 +108,7 @@ Check Charge And Shutdown
     Sleep     3s
 
 Check Bluetooth Pairing And Broadcast
-    Log To Console    Check Bluetooth Pairing And Broadcast
+    Log    Check Bluetooth Pairing And Broadcast    console=True
     Starton Device 
 
     Serial Parallel Read Until  Left    system_shutdown    timeout=${10}
@@ -116,13 +117,21 @@ Check Bluetooth Pairing And Broadcast
     
     
     Reset Device 
-    Send Heartbeat
-    #send ble/bt to each other 
-    Serial write hex        s_Left        ${ble_cmd_r} 
-    Serial write hex        s_Left        ${bt_cmd_r}  
+    
+    Send Heartbeat    4
 
-    Serial write hex        s_Right       ${ble_cmd_l} 
+    Send Comm Test
+    Send Request Bt Addr
+    #send ble/bt to each other 
+    Serial write hex        s_Left        ${bt_cmd_r}  
     Serial write hex        s_Right       ${bt_cmd_l} 
+
+    Sleep    0.5s
+    Serial write hex        s_Left        ${ble_cmd_r} 
+    Serial write hex        s_Right       ${ble_cmd_l} 
+    
+    Sleep    0.5s
+    Send Heartbeat    
 
     ${ret}=    Serial Parallel Read Wait    ${aids_list}
     
@@ -137,22 +146,30 @@ Check Bluetooth Pairing And Broadcast
     #NOTICE: this test loop that might get the information for last loop in searial, using sleep to make the system shutdown eventaully.
     #Need the information for bt pair trace.
 
+
+    Serial Parallel Read Until  Left    Access mode changed to 3    timeout=${15}
+    Serial Parallel Read Until  Right   Access mode changed to 3    timeout=${15}
+
+    Serial Parallel Read Until  Left    TWS-STATE:CONNECTING EVENT=EVT_TWS_CONNECT_FAILED    timeout=${15}
+    Serial Parallel Read Until  Right   TWS-STATE:CONNECTING EVENT=EVT_TWS_CONNECT_FAILED    timeout=${15}
+
+    Serial Parallel Read Start    ${aids_list}
+
     Starton Device    
     Send Heartbeat    5   
-
-    Serial Parallel Read Until  Left    Access mode changed to 3    timeout=${10}
-    Serial Parallel Read Until  Right   Access mode changed to 3    timeout=${10}
-    Serial Parallel Read Start    ${aids_list}
     Send Adv
 
     ${ret}=  Serial Parallel Read Wait   ${aids_list}
     Should Be True    '${ret}[Left][0]'!='None' or '${ret}[Right][0]'!='None'
 
+    # Add when bug fixed 
+    # Should Be True    '${ret}[Left][1]'=='None' and '${ret}[Right][1]'=='None'
+
     Shutdown Device 
     Sleep     3s
 
 Check Box Status
-    Log To Console    Check Box Status
+    Log    Check Box Status    console=True
     Starton Device
 
     Send Heartbeat
@@ -206,12 +223,16 @@ Check Box Status
     Shutdown Device 
     Sleep     3s
 
+# Test Shipping Mode
+#     Log    Test Shipping Mode    console=True
 
-
+    
+    
 *** Keywords ***
 BoardSetUp
     Log    s_port_l:${s_port_l}    console=True
     Log    s_port_r:${s_port_r}    console=True
+
     Log    d_port_l:${d_port_l}    console=True
     Log    d_port_r:${d_port_r}    console=True
     Log    factory_mode:${factory_mode}    console=True
@@ -233,8 +254,12 @@ BoardTearDown
     SerialTearDown
     Close Ftdi
 
+Test Set Up
+    Log    test_id:${test_id}    console=True
+    Check Init Soc
+
 Check Init Soc   
-    Log To Console    Check Init Soc
+    Log    Check Init Soc    console=True
     Starton Device
     Serial Parallel Read Until Regex    Left    soc: ([0-9]+)%    timeout=${10}
     Serial Parallel Read Until Regex    Right    soc: ([0-9]+)%    timeout=${10}
@@ -253,7 +278,7 @@ Check Init Soc
     #Reset Device 
 
 Check Factory Mode 
-    Log To Console    Factory mode enable!!!
+    Log    Factory mode enable!!!    console=True
     Starton Device 
 
     Serial Parallel Read Until    Left    VERSO FACTORY MODE    timeout=${10}
@@ -266,7 +291,7 @@ Check Factory Mode
     Reset Device
     ${ret}=  Serial Parallel Read Wait    ${aids_list}  
     
-    Log To Console    Turn To Release Mode
+    Log    Turn To Release Mode    console=True
 
     [Arguments]    ${num}=3
     FOR    ${counter}   IN RANGE  ${num} 
@@ -317,7 +342,7 @@ Starton Device
     Sleep    2s
 
 Charge Device
-    Log To Console    Charge Device
+    Log    Charge Device    console=True
     Charge    Off    lr
     Sleep     0.5s
     Charge    On    lr
@@ -374,4 +399,17 @@ Send Adv
         Sleep    0.7s
     END
 
-    
+Send Comm Test
+    Serial write hex        s_Left        010000
+    Serial write hex        s_Right       010000
+    Sleep    0.2s 
+
+Send Request Bt Addr
+    Serial write hex        s_Left        010600
+    Serial write hex        s_Right       010600
+    Sleep    0.2s 
+
+# Enter Shipping Mode
+#     Serial write hex        s_Left        010600
+#     Serial write hex        s_Right       010600
+#     Sleep    0.2s 
