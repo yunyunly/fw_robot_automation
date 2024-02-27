@@ -18,7 +18,8 @@ show_help() {
                                 1(burning)
                                 2(basic test) 
                                 4(bluetooth test), 
-                                8(ios bluetooth test)"
+                                8(ios bluetooth test),
+                                16(battery test)"
   echo "  --bin                 指定烧录bin文件,只有在测试烧录时才会check"
   echo "  --output              输出所有日志到output"
   echo "  --clean               清除所有测试日志"
@@ -49,6 +50,7 @@ burn_ha_robot_path="${test_root_folder}/test/test_burn_ha.robot"
 basic_test_robot_path="${test_root_folder}/test/test_basic.robot"
 bluetooth_test_robot_path="${test_root_folder}/test/test_freq.robot"
 ios_connect_robot_path="${test_root_folder}/test/test_ios_connect_setup.robot"
+battery_test_robot_path="${test_root_folder}/test/test_battery.robot"
 
 factory=0
 count=1
@@ -99,12 +101,12 @@ while [ "$#" -gt 0 ]; do
       shift 2
       ;;
     --test_suite)
-      if (( "$2" < 0 || "$2" > 8 )); then
-            echo "Only support test suite between 0 and 8."
-            echo "Invalid suite id ${$2}, please check."
-            shift 2
-            continue;
-      fi 
+      # if (( "$2" < 0 || "$2" > 8 )); then
+      #       echo "Only support test suite between 0 and 8."
+      #       echo "Invalid suite id ${$2}, please check."
+      #       shift 2
+      #       continue;
+      # fi 
       test_suite="$2"
       shift 2
       ;; 
@@ -178,9 +180,40 @@ fi
 charging_ha()
 {
   id="$1"
+
+  bt_id="${bt_addr_table[$id]}"
   bus_id="${bus_table[$id]}"
   dev_id="${device_table[$id]}"
   robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} "${charge_ha_robot_path}"
+}
+
+battery_test()
+{
+  name="battery_test"
+  id="$1"
+
+  bt_id="${bt_addr_table[$id]}"
+  bus_id="${bus_table[$id]}"
+  dev_id="${device_table[$id]}"
+
+  s_port_l="/dev/s_l_$bt_id"
+  s_port_r="/dev/s_r_$bt_id"
+  d_port_l="/dev/d_l_$bt_id"
+  d_port_r="/dev/d_r_$bt_id"
+
+  log_dir=${output_folder}/bt_${bt_addr_table[$id]}
+
+  # for ((i=1; i<=count; i++)); do
+  #   echo test count: ${i}:${count}
+
+  output="${log_dir}/${name}_${bt_addr_table[$id]}.xml"
+  log="${log_dir}/${name}_${bt_addr_table[$id]}_log.html"
+  report="${log_dir}/${name}_${bt_addr_table[$id]}_report.html"
+
+  robot -v test_id:${id} -v test_count:${count} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+  --output "${output}" --log "${log}" --report "${report}" "${battery_test_robot_path}"
+
+  # done
 }
 
 burn_ha_test()
@@ -218,17 +251,20 @@ burn_ha_test()
   for ((i=1; i<=count; i++)); do
     echo test count: ${i}:${count}
 
-    output="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.xml"
-    log="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.html"
+    output="${log_dir}/${name}_${bt_addr_table[$id]}_${i}.xml"
+    log="${log_dir}/${name}_${bt_addr_table[$id]}_${i}.html"
+    report="${log_dir}/${name}_${bt_addr_table[$id]}_${i}_report.html"
 
-    robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
-    -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} --output "${output}" --log "${log}" "${burn_ha_robot_path}"
+    robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+    -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} \ 
+    --output "${output}" --log "${log}" --report "${report}" "${burn_ha_robot_path}"
 
   done
 }
 
 basic_test()
 {
+  name="basic_test"
   id="$1"
 
   bt_id="${bt_addr_table[$id]}"
@@ -257,12 +293,13 @@ basic_test()
       if [ $i -gt 1 ]; then
         factory=0
       fi
-      output="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.xml"
-      log="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.html"
+      output="${log_dir}/${name}_${bt_addr_table[$id]}_${i}.xml"
+      log="${log_dir}/${name}_${bt_addr_table[$id]}_${i}.html"
+      report="${log_dir}/${name}_${bt_addr_table[$id]}_${i}_report.html"
 
       robot -v factory_mode:${factory} -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
-      --output "${output}" --log "${log}" "${basic_test_robot_path}"
+      --output "${output}" --log "${log}" --report "${report}" "${basic_test_robot_path}"
   done
 }
 
@@ -329,7 +366,7 @@ burn_ha_and_basic_test()
       output="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} --output "${output}" --log "${log}" "${burn_ha_robot_path}"
 
       output="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.xml"
@@ -344,6 +381,7 @@ burn_ha_and_basic_test()
 
 ios_bluetooth_test()
 {
+  name="ios_bluetooth_test"
   id="$1"
 
   bt_id="${bt_addr_table[$id]}"
@@ -368,9 +406,9 @@ ios_bluetooth_test()
   # for ((i=1; i<=count; i++)); do
       # echo test count: ${i}:${count}
 
-  output="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}.xml"
-  log="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}_log.html"
-  report="${log_dir}/ios_bluetooth_test_${bt_addr_table[$id]}_report.html"
+  output="${log_dir}//${name}_${bt_addr_table[$id]}.xml"
+  log="${log_dir}/${name}_${bt_addr_table[$id]}_log.html"
+  report="${log_dir}//${name}_${bt_addr_table[$id]}_report.html"
 
   robot -v test_id:${id} -v count:${count} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
   -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} -v bt_address_r:${bt_address_r} \
@@ -406,7 +444,7 @@ all_test()
       output="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.xml"
       log="${log_dir}/burn_ha_test_${bt_addr_table[$id]}_${i}.html"
 
-      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v port_l:${s_port_l} -v port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id}  -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${bes_bin} --output "${output}" --log "${log}" "${burn_ha_robot_path}"
 
       output="${log_dir}/basic_test_${bt_addr_table[$id]}_${i}.xml"
@@ -444,7 +482,7 @@ for id in "${id_list[@]}"; do
   # fi
 
   if [ "${test_suite}" = 0 ]; then          #only charging 
-    name="charging_ha"
+    name="charging_test"
     charging_ha "$id" &
   elif [ "${test_suite}" = 1 ]; then        #burning 
     #check if valid bin 
@@ -485,11 +523,19 @@ for id in "${id_list[@]}"; do
     name="ios_bluetooth_test"
     ios_bluetooth_test "$id" &
     pid_list[$id]=$!
+  elif [ "${test_suite}" = 16 ]; then        #all
+    name="battery_test"
+    battery_test "$id" &
+    pid_list[$id]=$!
+  else
+    echo "Invalid test suite: ${test_suite}" 
+    exit 1
   fi
 done
 
 cleanup() {
     echo "Receive ctrl+c, quit test"
+    sleep 10
     for ((i = 0; i < ${#pid_list[@]}; i++)); do
         if [ "${pid_list[$i]}" -ne 0 ]; then
             # quit[$i]=1

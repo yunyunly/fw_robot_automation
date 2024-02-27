@@ -5,8 +5,8 @@ Library           ../lib/SerialLib.py
 Test Setup        Test Set Up
 
 *** Variables ***
-${port_l}    /dev/ttyUSB2
-${port_r}    /dev/ttyUSB3
+${s_port_l}    /dev/ttyUSB2
+${s_port_r}    /dev/ttyUSB3
 ${d_port_l}    /dev/ttyUSB4
 ${d_port_r}    /dev/ttyUSB5
 ${prelude_id}    -1
@@ -28,7 +28,7 @@ ${version}    2.0.13
 Burn Orka Two With Prelude ID
     [Documentation]     Burn firmware to hearing aids
     [Tags]              Firmware
-    Update Ha Port      ${port_l}    ${port_r}
+    Update Ha Port      ${s_port_l}    ${s_port_r}
     ${ret}=    Burn Orka     1    lr    programmer1600.bin  best1600_tws.bin    ota_boot_2700_20211216_5fca0c3e.bin
     Should Be True      ${ret} == 0
 
@@ -37,8 +37,8 @@ Burn Orka Two With Bus And Device
     [Documentation]     Burn firmware to hearing aids
     [Tags]              Firmware
 
-    Log    s_port_l:${port_l}    console=True
-    Log    s_port_r:${port_r}    console=True
+    Log    s_port_l:${s_port_l}    console=True
+    Log    s_port_r:${s_port_r}    console=True
     Log    d_port_l:${d_port_l}    console=True
     Log    d_port_r:${d_port_r}    console=True
     Log    program_bin:${program_bin}    console=True
@@ -49,7 +49,7 @@ Burn Orka Two With Bus And Device
     Log    bus_id:${bus_id}    console=True
     Log    device_id:${dev_id}    console=True
 
-    Update Ha Port      ${port_l}    ${port_r}
+    Update Ha Port      ${s_port_l}    ${s_port_r}
     ${ret}=    Burn Orka With Bus    ${bus_id}    ${dev_id}    l    ${program_bin}    ${bes_bin}     ${ota_bin}    erase_chip    ${factory_file_l}
     ${ret}=    Burn Orka With Bus    ${bus_id}    ${dev_id}    r    ${program_bin}    ${bes_bin}     ${ota_bin}    erase_chip    ${factory_file_r}
     Should Be True      ${ret} == 0
