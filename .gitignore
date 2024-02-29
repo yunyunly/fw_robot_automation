@@ -7,3 +7,5 @@ output.xml
 .mypy_cache
 serial_logs/*
 logs/
+*CC-OtaBootloader_1.1.hex
+*echo_two.hex

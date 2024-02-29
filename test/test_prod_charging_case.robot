@@ -196,7 +196,7 @@ Case control volume
     Undock    Both
     Sleep    2s
     Press Button    Left
-    ${res}=    Read Case    Btn: vol up
+    ${res}=    Read Case    Ble: vol up
     Should Be True    ${res}
     ${res}=    Read Right    Btn: vol up    
     Should Be True    ${res}
@@ -204,7 +204,7 @@ Case control volume
     Should Be True    ${res}
     Sleep    0.5s
     Press Button    Right
-    ${res}=    Read Case    Btn: vol down
+    ${res}=    Read Case    Ble: vol down
     Should Be True    ${res}
     ${res}=    Read Right    Btn: vol down
     Should Be True    ${res}
@@ -219,7 +219,7 @@ Case control mode switch
     Undock    Both
     Sleep    2s
     Press Button    Fn
-    ${res}=    Read Case    Btn: mode switch
+    ${res}=    Read Case    Ble: mode switch
     Should Be True    ${res}
     ${res}=    Read Right    mode switch to
     Should Be True    ${res}
@@ -227,7 +227,7 @@ Case control mode switch
     Should Be True    ${res}
     Sleep    0.5s
     Press Button    Fn
-    ${res}=    Read Case    Btn: mode switch
+    ${res}=    Read Case    Ble: mode switch
     Should Be True    ${res}
     ${res}=    Read Right    mode switch to
     Should Be True    ${res}
@@ -294,8 +294,8 @@ Teardown
     Serial Close Port    Right
     Case Close
     Sleep    1s
-    Disconnect Charging Case    ${CC_BLE_ADDR}
-    Disconnect    ${HA_BT_ADDR}
+    Disconnect Charging Case     ${CC_BLE_ADDR}
+    Ble Disconnect Hearing Aids     ${HA_BLE_ADDR}
     BluetoothLib.Quit
 
 Read Case

@@ -49,13 +49,13 @@ class ChargingCaseLib:
         """
         return self.blue.ble_connect_case(addr)
 
-    def disconnect_charging_case(self):
+    def disconnect_charging_case(self,addr):
         """Disconnect charging case.  
         
         Examples:
         | Disconnect Charging Case |
         """
-        self.blue.ble_disconnect_case() 
+        self.blue.ble_disconnect_case(addr) 
  
     def print_info(self):
         """Print common information of charging case via serial port  
