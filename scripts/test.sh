@@ -330,7 +330,7 @@ robot_test() {
       log="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_log.html"
       report="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_report.html"
 
-      if [ "$DestTestFirstRobotName" = "burn_ha_test" ]; then
+      if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
         factory=1
       fi
       robot -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
