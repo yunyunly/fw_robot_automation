@@ -1,23 +1,22 @@
 *** Settings ***
 Documentation     Keywords(API) Test Cases for App control HA
-Suite Setup       Setup
-Suite Teardown    Teardown
-Library           ../lib/AndroidTestLib.py
+
+Suite Setup       Set Up
+Test Setup        Test Set Up
+Suite Teardown    Tear Down
+
 Library           ../lib/PreludeControlLib.py
+Library           ../lib/HearingAidsLib.py 
+Library           ../lib/AudioLib.py
 Library           ../lib/SerialLib.py
-Library           ../lib/BluetoothLib.py
+Library            ../lib/BluetoothLib.py
+Library           BuiltIn
 
-
-***Variables***
-${android_name}    R38M20B9D2R
-${socket_port}    65432
-${ha_addr}    0:0:0
-
+*** Variables ***
 ${prelude_id}=    1
 ${bus_id}    1  
 ${dev_id}    1
 ${test_id}    1
-${test_count}    1
 ${s_port_l}    /dev/ttyUSB2
 ${s_port_r}    /dev/ttyUSB3
 ${d_port_l}    /dev/ttyUSB4
@@ -32,166 +31,178 @@ ${ble_cmd_l}    00010906${ble_address_l}
 ${ble_cmd_r}    00010906${ble_address_r} 
 ${bt_cmd_l}    00010706${bt_address_l} 
 ${bt_cmd_r}    00010706${bt_address_r} 
-
-${factory_mode}    0
 @{aids_list}    Left    Right
 
-
 *** Test Cases ***
-Read General Status
-    Log Soc
-    Log Volt
-    Log Mcu Freq    M55
-    Log Mcu Freq    M33
-
-Audio play a2dp
-    Log To Console      Normal and Bf_off
-    Switch Beamforming  Off  
-    Switch Mode         Normal
-    Android A2dp Start       
-    Sleep  5s
-    Log Mcu Freq    M55
-    Android A2dp Stop      
-
-    Sleep  5s
-    Log Mcu Freq    M55
-    Log To Console      Normal and Bf_on
-    Switch Beamforming  On
-    Switch Mode         Normal
-    Android A2dp Start      
-    Sleep  5s 
-    Log Mcu Freq    M55
-    Android A2dp Stop     
-
-    Sleep  5s 
-    Log Mcu Freq    M55 
-    Log To Console      Innoise and Bf_off
-    Switch Beamforming  Off 
-    Switch Mode         Innoise
-    Android A2dp Start      
-    Sleep  5s 
-    Log Mcu Freq    M55
-    Android A2dp Stop    
-    
-    Sleep  5s
-    Log Mcu Freq    M55 
-    Log To Console      Innoise and Bf_on
-    Switch Beamforming  On
-    Switch Mode         Innoise
-    Android A2dp Start  
-
-    Sleep  5s 
-    Log Mcu Freq    M55
-    Android A2dp Stop      
-	
-    Sleep  5s
-    Log Mcu Freq     M55 
-
-
-Audio play hfp 
-    Log To Console      Normal and Bf_off
-    Switch Beamforming  Off  
-    Switch Mode         Normal
-    Android Hfp Start
-    Sleep  5s
-    Log Mcu Freq    M55
-    Android Hfp Stop
-
-    Sleep  5s
-    Log Mcu Freq    M55
-    Log To Console      Normal and Bf_on
-    Switch Beamforming  On
-    Switch Mode         Normal
-    Android Hfp Start
-    Sleep  5s 
-    Log Mcu Freq    M55
-    Android Hfp Stop
-
-    Sleep  5s 
-    Log Mcu Freq    M55 
-    Log To Console      Innoise and Bf_off
-    Switch Beamforming  Off 
-    Switch Mode         Innoise
-    Android Hfp Start
-    Sleep  5s 
-    Log Mcu Freq    M55
-    Android Hfp Stop
-
-    Sleep  5s
-    Log Mcu Freq    M55 
-    Log To Console      Innoise and Bf_on
-    Switch Beamforming  On
-    Switch Mode         Innoise
-    Android Hfp Start
-    Sleep  5s 
-    Log Mcu Freq    M55
-    Android Hfp Stop
-    Sleep  5s
-    Log Mcu Freq     M55 
-
-# repeat test
-#     # FOR   ${i}    IN RANGE    1    ${test_count}
-#         Read General Status
-#         Audio play a2dp
-#         Audio play hfp
-#     # END
-
-
-
-*** Keywords ***
-Setup   
-    Log    Setup    console=True 
-    Log    ${test_count} ${bus_id} ${dev_id} ${s_port_l} ${s_port_r} ${d_port_l} ${d_port_r}    console=yes
-    Log    ${ble_address_l} ${ble_address_l} ${bt_address_l} ${bt_address_l}    console=yes
-
-
-    Run Keyword If    ${factory_mode}    Setup Prelude 
-    Sleep    5s
-    Set Android Device    ${android_name}    ${socket_port}
-    Start Server
-
-    ${tmp}=    Addr Insert Colon   ${ble_address_r}
-    Set Suite Variable    ${ble_address_r}    ${tmp}
-
-    Ble Connect Ha    ${ble_address_r}
-    Sleep    5s
-
-Setup Prelude 
-    Open Device With Bus    ${bus_id}    ${dev_id}
-    SerialSetUp
-
+Connect Bluetooth
+# Suite set up would cause error related to library __init__ and __del__. Thus placed in test case.
+    Log    test vars: ${bus_id} ${dev_id} ${s_port_l} ${s_port_r} ${d_port_l} ${d_port_r} ${ble_address_l} ${ble_address_r}    console=True
+    #init prelude board
     Starton Device 
-    Run Keyword If    ${factory_mode}    Check Factory Mode  
+
     Reset Device
 
-    Send Heartbeat    4
-
+    Send Heartbeat
     #send ble/bt to each other 
-    Serial write hex        s_Left        ${bt_cmd_r}  
-    Serial write hex        s_Right       ${bt_cmd_l} 
-
-    Sleep    0.5s
     Serial write hex        s_Left        ${ble_cmd_r} 
+    Serial write hex        s_Left        ${bt_cmd_r}  
+
     Serial write hex        s_Right       ${ble_cmd_l} 
-    
-    Sleep    0.5s
-    Send Heartbeat    
+    Serial write hex        s_Right       ${bt_cmd_l} 
 
     Sleep    10s
 
     Starton Device 
     Send Heartbeat    5
 
+    Sleep    3s
 
-Teardown
-    Log    Teardown    console=True
-    Stop Android
-    Run Keyword If    ${factory_mode}    Teardown Prelude  
+    Send Heartbeat
+    Send BoxOpen
 
-Teardown Prelude 
-    Shutdown Device
+    FOR    ${bt_counter}   IN RANGE  3
+    Log To Console    Connect bredr for ${bt_counter}-th try
+    Send Adv
+    Sleep    3s
+    ${ret}=    Connect Hearing Aids Classic    ${ble_address_r}
+    Log To Console    Connect bredr status: ${ret}
+    Run Keyword If    ${ret} == True    Exit For Loop
+    Sleep    3s
+    END
+    Should Be True    ${ret} == True
+    
+    FOR    ${ble_counter}   IN RANGE  3
+    Log To Console    Connect le for ${ble_counter}-th try
+   	${ret}=    Connect Hearing Aids      ${ble_address_r}
+    Log To Console    Connect le status: ${ret}
+    Run Keyword If    ${ret} == True    Exit For Loop
+    Sleep    3s
+    END 
+    Should Be True    ${ret} == True
+
+Read General Status
+    Log Soc
+    Log Volt
+    Log Mcu Freq    M55 
+    Log Mcu Freq    M33
+
+Audio play a2dp
+    ${id}=    Audio Get Dev Id
+    	Should Be True    ${id} > 0
+    Log To Console      Normal and Bf_off
+    Switch Beamforming  Off  
+    Switch Mode         Normal
+    ${process_id}=   Audio Start Play Audio      ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s
+    Log Mcu Freq    M55
+    Log To Console      Normal and Bf_on
+    Switch Beamforming  On
+    Switch Mode         Normal
+    ${process_id}=   Audio Start Play Audio      ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s 
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s 
+    Log Mcu Freq    M55 
+    Log To Console      Innoise and Bf_off
+    Switch Beamforming  Off 
+    Switch Mode         Innoise
+    ${process_id}=   Audio Start Play Audio      ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s 
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s
+    Log Mcu Freq    M55 
+    Log To Console      Innoise and Bf_on
+    Switch Beamforming  On
+    Switch Mode         Innoise
+    ${process_id}=   Audio Start Play Audio      ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s 
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s
+    Log Mcu Freq     M55 
+
+
+Audio play hfp 
+    ${id}=    Audio Get Dev Id
+    Log To Console      Normal and Bf_off
+    Switch Beamforming  Off  
+    Switch Mode         Normal
+    ${process_id}=   Audio Start Play Hfp        ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s
+    Log Mcu Freq    M55
+    Log To Console      Normal and Bf_on
+    Switch Beamforming  On
+    Switch Mode         Normal
+    ${process_id}=   Audio Start Play Hfp        ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s 
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s 
+    Log Mcu Freq    M55 
+    Log To Console      Innoise and Bf_off
+    Switch Beamforming  Off 
+    Switch Mode         Innoise
+    ${process_id}=   Audio Start Play Hfp      ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s 
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s
+    Log Mcu Freq    M55 
+    Log To Console      Innoise and Bf_on
+    Switch Beamforming  On
+    Switch Mode         Innoise
+    ${process_id}=   Audio Start Play Hfp      ~/audio/Big_band.wav
+	Should Be True    ${process_id} > 0
+    Sleep  5s 
+    Log Mcu Freq    M55
+    ${ret}=   Audio Stop Play Audio  ${process_id}
+	Should Be True    ${ret} == True
+    Sleep  5s
+    Log Mcu Freq     M55 
+
+*** Keywords ***
+Test Set Up
+    Log    test_id:${test_id}    console=True
+
+Set Up
+    ${tmp}=    Addr Insert Colon   ${ble_address_r}
+    Set Suite Variable    ${ble_address_r}    ${tmp}
+    Log To Console    Set Up
+    Open Device With Bus    ${bus_id}    ${dev_id} 
+    SerialSetUp
+    Init
+
+
+Tear Down
+    Log To Console    Tear Down
+    Disconnect Hearing Aids    ${ble_address_r}
+    Quit
+    # Shutdown Device
     SerialTearDown
     Close Ftdi
+    Sleep    5s
 
 SerialSetUp
     Serial Open Hearing Aids 1152000
@@ -298,33 +309,3 @@ Send Adv
         Serial write hex        s_Right       010a00
         Sleep    0.2s
     END
-
-Check Factory Mode 
-    Log    Factory mode enable!!!    console=True
-    Starton Device 
-
-    Serial Parallel Read Until    Left    VERSO FACTORY MODE    timeout=${10}
-    Serial Parallel Read Until    Right    VERSO FACTORY MODE    timeout=${10}
-
-    Serial Parallel Read Until    Left    Start pmu shutdown    timeout=${10}
-    Serial Parallel Read Until    Right    Start pmu shutdown    timeout=${10}
-    
-    Serial Parallel Read Start    ${aids_list}  
-    Reset Device
-    ${ret}=  Serial Parallel Read Wait    ${aids_list}  
-    
-    Log    Turn To Release Mode    console=True
-
-    [Arguments]    ${num}=3
-    FOR    ${counter}   IN RANGE  ${num} 
-        Serial Write Str             s_Left      [to_rel,]
-        Serial Write Str             s_Right     [to_rel,]
-    
-        Sleep   0.7s
-    END
-
-    Should Not Be Equal As Strings    ${ret}[Left][0]    None
-    Should Not Be Equal As Strings    ${ret}[Right][0]    None
-
-    Should Be Equal As Strings    ${ret}[Left][1]    None
-    Should Be Equal As Strings    ${ret}[Right][1]    None

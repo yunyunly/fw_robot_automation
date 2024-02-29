@@ -83,7 +83,6 @@ Check Soc
     # Run Keyword If    ${result}[Right][0][0] == 100    Run Keyword If    ${result}[Right][1][0] < 4200    Fail 
 
 Inc Low Batt Count
-    Log    1111    console=True
     ${low_batt_time}=  Evaluate    ${low_batt_time} + 1
     Set Global Variable    ${low_batt_time}
 
