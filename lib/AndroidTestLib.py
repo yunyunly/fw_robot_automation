@@ -25,13 +25,21 @@ class AndroidTestLib:
     def __init__(self):
         self.androidDeviceSn = None
         self.socketPort = 65432
-        self.androidSocket = None
+        self.androidSocket: socket = None
         self.androidConnected = False
         self.androidBleConnected:str = None
         self.androidBtConnected:str = None
         self.addr = ""
+        self.heartBeatThread = None
+        self.serverThread = None
         
     def set_android_device(self,sn:str, port=65432):
+        """set the android device to be tested
+
+        Args:
+            sn (str): the serial number of the android device, which can be found by running 'adb devices' in terminal
+            port (int, optional): port on android device to be used for socket connection. Defaults to 65432.
+        """
         self.androidDeviceSn = sn
         self.socketPort = port
         if not port is int:
@@ -43,6 +51,15 @@ class AndroidTestLib:
             pass
         
     def bt_connect_ha(self,addr,timeout:int=20):
+        """Command Android to connect hearing aid via OrkaSDK
+
+        Args:
+            addr (_type_): HA bluetooth address, e.g. "12:12:12:12:12:11"
+            timeout (int, optional): Connection timeout Defaults to 20.
+
+        Returns:
+            Bool: True if connection is successful, False otherwise
+        """
         self.__send_message(f"connect bt {addr}")
         for _ in range(timeout*10):
             if self.androidBtConnected == addr:
@@ -51,6 +68,15 @@ class AndroidTestLib:
         return False
         
     def ble_connect_ha(self,addr:str,timeOut:int=10):
+        """Command Android to connect hearing aid via OrkaSDK
+
+        Args:
+            addr (str): HA bluetooth address, e.g. "12:12:12:12:12:11"
+            timeOut (int, optional): Connection timeout. Defaults to 10.
+
+        Returns:
+            Bool: True if connection is successful, False otherwise
+        """
         self.__send_message(f"connect ble {addr}")
         for _ in range(timeOut*10):
             if addr == self.androidBleConnected:
@@ -68,6 +94,14 @@ class AndroidTestLib:
         return False
     
     def android_send_cmd(self,cmd:str):
+        """Let android device send a command to hearing aids
+
+        Args:
+            cmd (str): command to be sent to hearing aids, in hex string format. e.g. "01010000"
+
+        Returns:
+            Bool: True if the command is sent to Android successfully, False otherwise. Does not guarantee the command is executed successfully on hearing aids.
+        """
         if self.androidBleConnected != None:
             self.__send_message(f"cmd {cmd}")
             return True
@@ -76,15 +110,27 @@ class AndroidTestLib:
             return False
         
     def android_a2dp_start(self):
+        """
+        Command Android to start A2DP audio streaming
+        """
         self.__send_message(f"a2dp play {self.androidBleConnected}")
     
     def android_a2dp_stop(self):
+        """
+        Command Android to stop A2DP audio streaming
+        """
         self.__send_message(f"a2dp stop {self.androidBleConnected}")
         
     def android_hfp_start(self):
+        """
+        Command Android to start HFP audio streaming
+        """
         self.__send_message(f"hfp start {self.androidBleConnected}")
         
     def android_hfp_stop(self):
+        """
+        Command Android to stop HFP audio streaming
+        """
         self.__send_message(f"hfp stop {self.androidBleConnected}")
     
     def run_adb_cmd(self,cmd:str):
@@ -128,8 +174,8 @@ class AndroidTestLib:
                     while self.androidConnected:
                         try:
                             data = conn.recv(1024)
-                        except socket.timeout:
-                            Console("Connection timed out.")
+                        except:
+                            Console("Connection lost.")
                             self.stop_android()
                             break
                         if not data:
@@ -145,6 +191,7 @@ class AndroidTestLib:
                 time.sleep(3)
                 
         thread = threading.Thread(target=server_thread)
+        self.serverThread = thread
         thread.start()
         self.run_adb_cmd(adb_start_app(self.androidDeviceSn))
         while not self.androidConnected:
@@ -153,6 +200,7 @@ class AndroidTestLib:
                 return
             time.sleep(1)
         heartbeat_thread = threading.Thread(target=heartbeat_thread)
+        self.heartBeatThread = heartbeat_thread
         heartbeat_thread.start()
     
     def __signal_client_stop(self):
@@ -160,9 +208,13 @@ class AndroidTestLib:
         
     def stop_android(self):
         if self.androidConnected:
-            self.androidConnected = False
-            self.run_adb_cmd(adb_stop_app(self.androidDeviceSn))
             self.__signal_client_stop()
+            self.androidConnected = False
+            if(self.heartBeatThread != None):
+                self.heartBeatThread.join()
+            if(self.serverThread != None):
+                self.serverThread.join()
+            self.run_adb_cmd(adb_stop_app(self.androidDeviceSn))
             self.androidSocket.close()
 
         for thread in threading.enumerate():
@@ -175,12 +227,12 @@ class AndroidTestLib:
         if self.androidConnected:
             msg = msg+"\n"
             self.androidSocket.sendall(msg.encode())
-            Console(f"Sent message: {msg}")
+            Console(f"{datetime.now()} send android msg: {msg}")
         else:
             Console("Android device not connected.")
 
     def __handle_message(self,msg: str):
-        Console(f"{datetime.now()}message:{msg}")
+        Console(f"{datetime.now()} recv android msg:{msg}")
         msg = msg.replace("\n","")
         match(msg.split(" ")[0]):
             case "connected":
