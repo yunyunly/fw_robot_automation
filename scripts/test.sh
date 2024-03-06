@@ -33,6 +33,7 @@ SupportTestCases=(
   "BATTERY_TEST:battery_test:test_battery"
   "BURN_AND_BASIC_TEST:burn_ha_and_basic_test:test_burn_ha:test_basic"
   "BURN_AND_ANDROID_BLUETOOTH_TEST:burn_ha_and_android_bluetooth_test:test_burn_ha:test_android_bluetooth"
+  "SHIPPING_MODE_TEST:shipping_mode_test:test_shipping_mode"
 )
 
 tcnt=0
@@ -71,14 +72,14 @@ Usage() {
   # print_red "Error: line $1"
   echo "Usage: $0 --id #_id --test_case #_case ..."
   echo " --id #_id                                指定ID参数, para: 1-8/all"
-  echo " --test_case #_test_case_id               指定test_case, 具体如下："
+  echo " --case #_test_case_id                    指定test_case, 具体如下："
   tcnt=0
   for mtestcase in ${SupportTestCases[@]}; do
     DestTestCaseStr=$(echo $mtestcase | cut -d: -f1)
     printf "%43d. %s\n" $tcnt $DestTestCaseStr
     ((tcnt += 1))
   done
-  echo "  --test_count #_test_count               指定次数参数"
+  echo "  --count #_test_count                    指定次数参数"
   echo "  --bin                                   指定烧录bin文件,只有在测试烧录时才会check"
   echo "  --output                                指定输出所有日志到output"
   echo "  --clean                                 清除原有测试目录"
@@ -136,7 +137,7 @@ for args in $@; do
     fi
     shift 2
     ;;
-  --test_case)
+  --case)
     args="$2"
     if [ -z "$args" ]; then
       print_yellow "Empty input: $args"
@@ -147,7 +148,7 @@ for args in $@; do
     fi
     shift 2
     ;;
-  --test_count)
+  --count)
     args="$2"
     if [ -z "$args" ]; then
       print_yellow "Empty input: $args"
@@ -170,7 +171,6 @@ for args in $@; do
     ;;
   --output)
     args=$("pwd")/"$2"
-    echo 54321-$args
     if [ -z "$args" ]; then
       print_yellow "Empty input: $args"
     fi
@@ -186,6 +186,11 @@ for args in $@; do
     shift
     ;;
   --help)
+    Usage ${LINENO}
+    shift
+    ;;
+  --*)
+    print_red "Unrecognized para: $args, please check:"
     Usage ${LINENO}
     shift
     ;;
@@ -259,7 +264,7 @@ env_prepare() {
 robot_test() {
   id="$1"
   test_num="$2"
-
+  echo "当前id:${id}, 线程ID: $BASHPID"
   test_robot_path=${TEST_CASE_DIR}/${DestTestFirstRobotName}.robot
   if [ ! -f "$test_robot_path" ]; then
     print_red "Test file: [$test_robot_path] does not exist, Return."
@@ -299,9 +304,9 @@ robot_test() {
       log="NONE"
       report="NONE"
     else
-      output="${log_dir}/${roDestTestFirstRobotNamebot_name}_${bt_addr_table[$id]}.xml"
-      log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log.html"
-      report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report.html"
+      output="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_${i}.xml"
+      log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log_${i}.html"
+      report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report_${i}.html"
     fi
 
     if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
@@ -311,7 +316,7 @@ robot_test() {
       fi
     fi
 
-    robot -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
+    robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
       -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
       -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} \
       -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
@@ -333,7 +338,7 @@ robot_test() {
       if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
         factory=1
       fi
-      robot -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
         -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
         -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
         -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot2_path}"
@@ -411,7 +416,7 @@ test_set
 
 cleanup() {
   print_red "Receive ctrl+c, quit test"
-  sleep 5
+  sleep 10
   for ((i = 0; i < ${#pid_list[@]}; i++)); do
     if [ "${pid_list[$i]}" -ne 0 ]; then
       # quit[$i]=1

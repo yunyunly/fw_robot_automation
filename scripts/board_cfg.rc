@@ -44,7 +44,7 @@ bus_table[7]=1
 bus_table[8]=1
 
 declare -A device_table
-device_table[1]=74
+device_table[1]=98
 device_table[2]=72
 device_table[3]=70
 device_table[4]=68
