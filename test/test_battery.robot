@@ -51,12 +51,15 @@ Check Soc
     Serial Parallel Read Until Regex    Left    batt volt: ([0-9]+)mV    timeout=${10}
     Serial Parallel Read Until Regex    Right    batt volt: ([0-9]+)mV    timeout=${10}
 
-    Serial Parallel Read Start    ${aids_list}  
-    Run Keyword If    ${charging_status}==True    Charge Device With Status
+    Serial Parallel Read Start    ${aids_list} 
+    Starton Device  
+    Run Keyword If    ${charging_status}==True    Charge Device
     Run Keyword If    ${charging_time}>${charging_time_th}    Stopcharge Device With Status
-    #Starton Device 
+    # Starton Device 
     Reset Device
     Send Heartbeat
+
+    Request Battery Status
     ${result}=  Serial Parallel Read Wait    ${aids_list}  
 
     # Should Not Be Equal As Strings    ${result}[Left][0][0]    None
@@ -65,7 +68,7 @@ Check Soc
     # Should Not Be Equal As Strings    ${result}[Right][1][0]    None
 	
     #case 1: long time low batt
-    Run Keyword If    ${low_batt_time}>${low_batt_time_th}    Charge Device
+    Run Keyword If    ${low_batt_time}>${low_batt_time_th}    Charge Device With Status
 
     Run Keyword If	${result}[Left][0]==None or ${result}[Right][0]==None or ${result}[Left][1]==None or ${result}[Right][1]==None	 Inc Low Batt Count
     Run Keyword If	${result}[Left][0]==None or ${result}[Right][0]==None or ${result}[Left][1]==None or ${result}[Right][1]==None   Return From Keyword
@@ -86,6 +89,8 @@ Check Soc
 Inc Low Batt Count
     ${low_batt_time}=  Evaluate    ${low_batt_time} + 1
     Set Global Variable    ${low_batt_time}
+    Log    Low bat time: ${low_batt_time}    console=True
+    
 
 Increase Charging Time
     ${charging_time}=  Evaluate    ${charging_time} + 1   
@@ -94,7 +99,7 @@ Increase Charging Time
 
 BoardSetUp
     Init Board    ${bus_id}    ${dev_id}    ${s_port_l}    ${s_port_r}    ${d_port_l}    ${d_port_r}    ${factory_mode} 
-    Charge Device
+    Charge Device With Status
     # Send Heartbeat
     # Sleep    5s
     # Reset Device
@@ -105,8 +110,12 @@ BoardTearDown
     Deinit Board
 
 Test Set Up
-    Log    test_id:${test_id}    console=True
-    Log    test_count:${test_count}    console=True
+    Log    test_id: ${test_id}    console=True
+    Log    test_time: ${test_count}hrs   console=True
+    ${tmp}=    Evaluate    ${test_count}*60
+    ${result}=    Convert To String    ${tmp}
+    Set Suite Variable    ${test_count}        ${result}  
+
 
     # Check Init Soc 
 

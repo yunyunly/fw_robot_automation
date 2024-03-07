@@ -16,7 +16,7 @@ Resource          ../resource/ha_utils.resource
 ${bus_id}    1
 ${dev_id}    1
 ${test_id}    1
-# ${test_count}    1
+${test_count}    1
 ${s_port_l}    /dev/ttyUSB2
 ${s_port_r}    /dev/ttyUSB3
 ${d_port_l}    /dev/ttyUSB4
@@ -40,17 +40,20 @@ Enter Shipping Mode
     Reset Device
     Send Heartbeat
 
+    Serial Parallel Read Until    Left    HEAD: dire 0x01, evt 0x00, len 0     timeout=${10}
+    Serial Parallel Read Until    Right    HEAD: dire 0x01, evt 0x00, len 0      timeout=${10}
+    Serial Parallel Read Start    ${aids_list}  
+    Send Comm Test
+    ${ret}=  Serial Parallel Read Wait    ${aids_list}  
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+
     Serial Parallel Read Until    Left    Shipmode: success    timeout=${10}
     Serial Parallel Read Until    Right    Shipmode: success     timeout=${10}
-    
     Serial Parallel Read Start    ${aids_list}  
-
     Serial write hex        s_Left    010F04A5C39625
     Serial write hex        s_Right    010F04A5C39625
-
     ${ret}=  Serial Parallel Read Wait    ${aids_list}  
-
-
     Should Not Be Equal As Strings    ${ret}[Left][0]    None
     Should Not Be Equal As Strings    ${ret}[Right][0]    None
     
@@ -67,7 +70,7 @@ BoardTearDown
     Deinit Board
 
 Test Set Up
-    Log    test_id:${test_id}    console=True
+    Log    test_id:${test_id} s_port_l:${s_port_l} test_count:${test_count}        console=True
     Check Init Soc
 
     

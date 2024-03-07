@@ -16,7 +16,7 @@ Resource          ../resource/ha_utils.resource
 ${bus_id}    1
 ${dev_id}    1
 ${test_id}    1
-# ${test_count}    1
+${test_count}    1
 ${s_port_l}    /dev/ttyUSB2
 ${s_port_r}    /dev/ttyUSB3
 ${d_port_l}    /dev/ttyUSB4
@@ -40,12 +40,10 @@ Check Release And Initialization
 
     # Serial Parallel Read Until Regex    Left    The Firmware rev is ([0-9]+)    timeout=${5}
     Serial Parallel Read Until    Left    init success    timeout=${10}
-    Serial Parallel Read Until    Left    VERSO RELEASE MODE    timeout=${10}
     Serial Parallel Read Until    Left    shutdown reason: echo not active    timeout=${10}
 
     # Serial Parallel Read Until Regex    Right    The Firmware rev is ([0-9]+)    timeout=${5}
     Serial Parallel Read Until    Right    init success    timeout=${10}
-    Serial Parallel Read Until    Right    VERSO RELEASE MODE    timeout=${10}
     Serial Parallel Read Until    Right    shutdown reason: echo not active    timeout=${10}
     
     Serial Parallel Read Start    ${aids_list}  
@@ -53,15 +51,11 @@ Check Release And Initialization
     Reset Device 
     ${ret}=  Serial Parallel Read Wait    ${aids_list}  
 
-    # Log To Console    ${ret}[Left][0]
-
     Should Not Be Equal As Strings    ${ret}[Left][0]    None
     Should Not Be Equal As Strings    ${ret}[Left][1]    None
-    Should Not Be Equal As Strings    ${ret}[Left][2]    None
 
     Should Not Be Equal As Strings    ${ret}[Right][0]    None
     Should Not Be Equal As Strings    ${ret}[Right][1]    None
-    Should Not Be Equal As Strings    ${ret}[Right][2]    None
     
     #Already shutdown
     Sleep     3s
@@ -110,10 +104,9 @@ Check Charge And Shutdown
 
 Check Bluetooth Pairing And Broadcast
     Log    Check Bluetooth Pairing And Broadcast    console=True
-    Starton Device 
 
-    Serial Parallel Read Until  Left    system_shutdown    timeout=${10}
-    Serial Parallel Read Until  Right   system_shutdown    timeout=${10}
+    Serial Parallel Read Until  Left    system_shutdown    timeout=${15}
+    Serial Parallel Read Until  Right   system_shutdown    timeout=${15}
     Serial Parallel Read Start    ${aids_list}
     
     
@@ -221,7 +214,7 @@ BoardTearDown
     Deinit Board
 
 Test Set Up
-    Log    test_id:${test_id}    console=True
+    Log    test_id:${test_id} s_port_l:${s_port_l} test_count:${test_count}        console=True
     Check Init Soc
     
 # Enter Shipping Mode

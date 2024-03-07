@@ -67,6 +67,7 @@ test_count=1
 cleantest=0
 id_list=()
 pid_list=(0 0 0 0 0 0 0 0 0)
+pid_list2=(0 0 0 0 0 0 0 0 0)
 
 Usage() {
   # print_red "Error: line $1"
@@ -79,7 +80,7 @@ Usage() {
     printf "%43d. %s\n" $tcnt $DestTestCaseStr
     ((tcnt += 1))
   done
-  echo "  --count #_test_count                    指定次数参数"
+  echo "  --count #_test_count                    指定测试次数/对于battery test代表测试小时数"
   echo "  --bin                                   指定烧录bin文件,只有在测试烧录时才会check"
   echo "  --output                                指定输出所有日志到output"
   echo "  --clean                                 清除原有测试目录"
@@ -261,10 +262,25 @@ env_prepare() {
   fi
 }
 
+cleanup() {
+  print_red "Receive ctrl+c, quit test"
+  sleep 5
+  for ((i = 0; i < ${#pid_list[@]}; i++)); do
+    if [ "${pid_list[$i]}" -ne 0 ]; then
+      kill ${pid_list[$i]}
+      echo kill ${pid_list[$i]}
+    fi
+
+    if [ "${pid_list2[$i]}" -ne 0 ]; then
+      kill ${pid_list2[$i]}
+      echo kill ${pid_list2[$i]}
+    fi
+  done
+
+}
+
 robot_test() {
   id="$1"
-  test_num="$2"
-  echo "当前id:${id}, 线程ID: $BASHPID"
   test_robot_path=${TEST_CASE_DIR}/${DestTestFirstRobotName}.robot
   if [ ! -f "$test_robot_path" ]; then
     print_red "Test file: [$test_robot_path] does not exist, Return."
@@ -298,60 +314,79 @@ robot_test() {
 
   log_dir=${log_folder}/bt_${bt_addr_table[$id]}
 
-  for ((i = 1; i <= test_count; i++)); do
-    if [ "$test_num" -eq 0 ]; then
-      output="NONE"
-      log="NONE"
-      report="NONE"
-    else
-      output="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_${i}.xml"
-      log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log_${i}.html"
-      report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report_${i}.html"
-    fi
+  trap cleanup SIGINT
 
-    if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
-      if [ ! -f "$burn_bin" ]; then
-        print_red "Burn file: [$burn_bin] does not exist, using --bin [test_burn_bin]."
-        return
-      fi
-    fi
+  if [ "$DestTestFirstRobotName" = "test_battery" ]; then
+    output="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_${i}.xml"
+    log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log_${i}.html"
+    report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report_${i}.html"
 
     robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
       -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
       -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} \
       -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
       -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
-      -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot_path}"
-
-    # if [ $? -ne 0 ]; then
-    #   print_red "Test Case:  ${DestTestCaseStr}"
-    #   print_red "Test Fail!!!"
-    #   exit 1
-    # fi
-
-    #if we have second robot test
-    if [ ! -z ${DestTestSecondRobotName} ]; then
-      output="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}.xml"
-      log="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_log.html"
-      report="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_report.html"
+      -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot_path}" &
+    pid_list[$id]=$!
+    wait
+  else
+    for ((i = 1; i <= test_count; i++)); do
+      if [ "$ChooseDestTestCaseNum" -eq 0 ]; then
+        output="NONE"
+        log="NONE"
+        report="NONE"
+      else
+        output="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_${i}.xml"
+        log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log_${i}.html"
+        report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report_${i}.html"
+      fi
 
       if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
-        factory=1
+        if [ ! -f "$burn_bin" ]; then
+          print_red "Burn file: [$burn_bin] does not exist, using --bin [test_burn_bin]."
+          return
+        fi
       fi
-      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
+
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${i} -v factory_mode:${factory} \
+        -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
+        -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} \
         -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
         -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
-        -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot2_path}"
-
+        -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot_path}" &
+      pid_list[$id]=$!
+      wait
       # if [ $? -ne 0 ]; then
       #   print_red "Test Case:  ${DestTestCaseStr}"
       #   print_red "Test Fail!!!"
       #   exit 1
       # fi
-    else
-      factory=0
-    fi
-  done
+
+      #if we have second robot test
+      if [ ! -z ${DestTestSecondRobotName} ]; then
+        output="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_${i}.xml"
+        log="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_log_${i}.html"
+        report="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_report_${i}.html"
+
+        if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
+          factory=1
+        fi
+        robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${i} -v factory_mode:${factory} \
+          -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+          -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
+          -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot2_path}" &
+        pid_list2[$id]=$!
+        wait
+        # if [ $? -ne 0 ]; then
+        #   print_red "Test Case:  ${DestTestCaseStr}"
+        #   print_red "Test Fail!!!"
+        #   exit 1
+        # fi
+      else
+        factory=0
+      fi
+    done
+  fi
 }
 
 test_set() {
@@ -361,8 +396,7 @@ test_set() {
       print_yellow "Deivce: $id is not set up, please check."
       continue
     fi
-    robot_test "$id" $ChooseDestTestCaseNum &
-    pid_list[$id]=$!
+    robot_test $id &
   done
 }
 
@@ -413,21 +447,7 @@ create_log() {
 # echo ChooseDestPlatformNum=${ChooseDestPlatformNum} >./.old_project
 env_prepare
 test_set
-
-cleanup() {
-  print_red "Receive ctrl+c, quit test"
-  sleep 10
-  for ((i = 0; i < ${#pid_list[@]}; i++)); do
-    if [ "${pid_list[$i]}" -ne 0 ]; then
-      # quit[$i]=1
-      kill ${pid_list[$i]}
-      echo kill ${pid_list[$i]}
-    fi
-  done
-}
-
 trap cleanup SIGINT
-
 wait
 
 print_green "All threads quit..."

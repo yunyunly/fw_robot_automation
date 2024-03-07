@@ -9,7 +9,7 @@ Library           BuiltIn
 @{aids_list}    Left    Right
 ${bus_id}    1
 ${dev_id}    1
-
+${test_id}    1
 
 *** Test Cases ***
 Charge Device
@@ -22,8 +22,7 @@ Charge Device
 
 *** Keywords ***
 BoardSetUp
-    Log To Console    bus_id:${bus_id}
-    Log To Console    device_id:${dev_id}
+    Log To Console    test_id:${test_id}; bus_id:${bus_id}; device_id:${dev_id}
 
     Open Device With Bus    ${bus_id}    ${dev_id}  
 

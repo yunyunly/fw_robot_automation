@@ -67,6 +67,9 @@ Check Init Soc
     Send Heartbeat    10
     Serial Parallel Read Until Regex    Left    soc: ([0-9]+)%    timeout=${10}
     Serial Parallel Read Until Regex    Right    soc: ([0-9]+)%    timeout=${10}
+
+    Serial Parallel Read Until Regex    Left    batt volt: ([0-9]+)mV    timeout=${10}
+    Serial Parallel Read Until Regex    Right    batt volt: ([0-9]+)mV    timeout=${10}
     
 
     Serial Parallel Read Start    ${aids_list} 
@@ -74,7 +77,7 @@ Check Init Soc
     Send Heartbeat    
     ${soc}=  Serial Parallel Read Wait    ${aids_list}  
 
-    Log    Left soc = ${soc}[Left][0][0] ; Right soc = ${soc}[Right][0][0]    console=True
+    Log    Left soc = ${soc}[Left][0][0] ; Right soc = ${soc}[Right][0][0] ; Left volt = ${soc}[Left][1][0] ; Right volt = ${soc}[Right][1][0]    console=True
     Run Keyword If    ${soc}[Left][0][0] <10 or ${soc}[Right][0][0] <= 10    Charge Device
 
     Should Be True    ${soc}[Left][0][0] >= 10 and ${soc}[Left][0][0] <= 100
@@ -96,6 +99,12 @@ Check Factory Mode
     Reset Device
     ${ret}=  Serial Parallel Read Wait    ${aids_list}  
     
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
+
+    Should Be Equal As Strings    ${ret}[Left][1]    None
+    Should Be Equal As Strings    ${ret}[Right][1]    None
+
     Log    Turn To Release Mode    console=True
 
     FOR    ${counter}   IN RANGE  ${num} 
@@ -105,12 +114,19 @@ Check Factory Mode
         Sleep   0.7s
     END
 
+
+    Serial Parallel Read Until    Left    VERSO RELEASE MODE    timeout=${10}
+    Serial Parallel Read Until    Right    VERSO RELEASE MODE    timeout=${10}
+    Serial Parallel Read Until    Left    shutdown reason: echo not active    timeout=${10}
+    Serial Parallel Read Until    Right    shutdown reason: echo not active    timeout=${10}
+    
+    Serial Parallel Read Start    ${aids_list}  
+    Reset Device
+    ${ret}=  Serial Parallel Read Wait    ${aids_list}  
     Should Not Be Equal As Strings    ${ret}[Left][0]    None
     Should Not Be Equal As Strings    ${ret}[Right][0]    None
-
-    Should Be Equal As Strings    ${ret}[Left][1]    None
-    Should Be Equal As Strings    ${ret}[Right][1]    None
-
+    Should Not Be Equal As Strings    ${ret}[Left][0]    None
+    Should Not Be Equal As Strings    ${ret}[Right][0]    None
 
 Log Basic Info
     [Arguments]     ${bus_id}    ${dev_id}    ${s_port_l}    ${s_port_r}    ${d_port_l}    ${d_port_r}    ${factory_mode}
@@ -232,4 +248,9 @@ Send Comm Test
 Send Request Bt Addr
     Serial write hex        s_Left        010600
     Serial write hex        s_Right       010600
+    Sleep    0.2s 
+
+Request Battery Status
+    Serial write hex        s_Left        010400
+    Serial write hex        s_Right       010400
     Sleep    0.2s 

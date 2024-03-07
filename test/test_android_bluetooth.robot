@@ -10,7 +10,7 @@ Resource          ../resource/ha_utils.resource
 
 
 ***Variables***
-${android_name}    R38M20B9D2R
+${android_name}    RF8N103W59D
 ${socket_port}    65432
 ${ha_addr}    0:0:0
 
