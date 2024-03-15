@@ -2,7 +2,7 @@
 Documentation     An simple resource file
 Library           ../lib/SerialLib.py
 Library           ../lib/PreludeControlLib.py
-Library           ../lib/AndroidTestLib.py
+# Library           ../lib/AndroidTestLib.py
 Library           ../lib/BluetoothLib.py
 
 *** Variables ***
@@ -22,9 +22,9 @@ Starton Device
     Sleep    2s
 
 Reset Device 
-    Reset     On    lr 
+    PreludeControlLib.Reset     On    lr 
     Sleep    0.2s 
-    Reset     Off    lr
+    PreludeControlLib.Reset     Off    lr
     Sleep    1s
 
 Charge Device
@@ -162,10 +162,10 @@ Bluetooth Pair
     Send Heartbeat    4
 
     #send ble/bt to each other 
-    Set Test Variable    ${ble_cmd_l}    00010906${ble_address_l} 
-    Set Test Variable    ${ble_cmd_r}    00010906${ble_address_r} 
-    Set Test Variable    ${bt_cmd_l}    00010706${bt_address_l} 
-    Set Test Variable    ${bt_cmd_r}    00010706${bt_address_r} 
+    Set Suite Variable    ${ble_cmd_l}    00010906${ble_address_l} 
+    Set Suite Variable    ${ble_cmd_r}    00010906${ble_address_r} 
+    Set Suite Variable    ${bt_cmd_l}    00010706${bt_address_l} 
+    Set Suite Variable    ${bt_cmd_r}    00010706${bt_address_r} 
 
     Serial write hex    s_Left    ${bt_cmd_r}  
     Serial write hex    s_Right    ${bt_cmd_l} 
@@ -182,22 +182,49 @@ Bluetooth Pair
     # Starton Device 
     # Send Heartbeat    5
 
-Connect Bluetooth    
-    [Arguments]    ${ble_address_r}
-    ${tmp}=    Addr Insert Colon   ${ble_address_r}
-    Set Suite Variable    ${ble_address_r}    ${tmp}
+# Connect Bluetooth    
+#     [Arguments]    ${ble_address_r}    ${bt_address_r}
+#     ${tmp}=    Addr Insert Colon   ${ble_address_r}
+#     Set Suite Variable    ${ble_address_r}    ${tmp}
 
-    Starton Device
-    Reset Device
-    Send Heartbeat
-    Ble Connect Ha    ${ble_address_r}
-    Sleep    3s
 
-Disconnect Bluetooth
-    [Arguments]    ${ble_address_r}
-    ${tmp}=    Addr Insert Colon   ${ble_address_r}
-    Set Suite Variable    ${ble_address_r}    ${tmp}
-    Ble Disconnect Ha    ${ble_address_r}   
+#     Starton Device    
+#     Reset Device
+#     Send BoxOpen
+#     Send Heartbeat    10   
+#     # Send Adv
+
+
+#     FOR    ${bt_counter}   IN RANGE  3
+#     Log To Console    Connect bredr for ${bt_counter}-th try
+#     Sleep    3s
+#     ${ret}=    Bt Connect Ha   ${ble_address_r}
+#     Log To Console    Connect bredr status: ${ret}
+#     Run Keyword If    ${ret} == True    Exit For Loop
+#     Sleep    3s
+#     END
+#     Should Be True    ${ret} == True
+
+
+#     # Log    11111    console=True
+#     # Sleep    100s
+#     # Sleep    100s
+    
+#     FOR    ${ble_counter}   IN RANGE  3
+#     Log To Console    Connect le for ${ble_counter}-th try
+#    	${ret}=    Ble Connect Ha   ${ble_address_r}
+#     Log To Console    Connect le status: ${ret}
+#     Run Keyword If    ${ret} == True    Exit For Loop
+#     Sleep    3s
+#     END 
+#     Should Be True    ${ret} == True
+
+
+# Disconnect Bluetooth
+#     [Arguments]    ${ble_address_r}
+#     ${tmp}=    Addr Insert Colon   ${ble_address_r}
+#     Set Suite Variable    ${ble_address_r}    ${tmp}
+#     Ble Disconnect Ha    ${ble_address_r}   
 
 Deinit Board   
     # Shutdown Device
@@ -233,7 +260,8 @@ Send BoxClose
     Sleep    0.2s 
 
 Send Adv 
-    FOR    ${counter}   IN RANGE  2
+    [Arguments]    ${num}=2
+    FOR    ${counter}   IN RANGE   ${num}
         #send adv 
         Serial write hex        s_Left        010a00
         Serial write hex        s_Right       010a00

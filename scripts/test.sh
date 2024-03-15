@@ -52,8 +52,8 @@ DestTestSecondRobotName=
 burn_bin=
 output=
 name=
-bt_address_suffix_l="3456789A00"
-ble_address_suffix="3456789A01"
+bt_address_suffix_l="00"
+ble_address_suffix="01"
 
 serial_logs_folder="${ROOT_DIR}/serial_logs/"
 
@@ -84,7 +84,7 @@ Usage() {
   echo "  --bin                                   指定烧录bin文件,只有在测试烧录时才会check"
   echo "  --output                                指定输出所有日志到output"
   echo "  --clean                                 清除原有测试目录"
-  echo "  --factory                               工厂模式测试"
+  echo "  --factory                               是否需要维持在工厂模式测试"
   echo "  --help                                  显示帮助信息"
 
   # echo or : $0 $ScriptKeyStr=\$TestCaseName ...
@@ -237,6 +237,13 @@ env_prepare() {
         rm -rf "${summary_folder}"
         rm -rf "${serial_folder}"
 
+        if [ "$(ls -A ${output}/total_log.html)" ]; then
+          rm ${output}/total_log.html
+        fi
+        if [ "$(ls -A ${output}/total_report.html)" ]; then
+          rm ${output}/total_report.html
+        fi
+
         mkdir -p ${total_folder}
         mkdir -p ${summary_folder}
         mkdir -p ${serial_folder}
@@ -267,12 +274,12 @@ cleanup() {
   sleep 5
   for ((i = 0; i < ${#pid_list[@]}; i++)); do
     if [ "${pid_list[$i]}" -ne 0 ]; then
-      kill ${pid_list[$i]}
+      kill -9 ${pid_list[$i]}
       echo kill ${pid_list[$i]}
     fi
 
     if [ "${pid_list2[$i]}" -ne 0 ]; then
-      kill ${pid_list2[$i]}
+      kill -9 ${pid_list2[$i]}
       echo kill ${pid_list2[$i]}
     fi
   done
@@ -295,7 +302,7 @@ robot_test() {
     fi
   fi
 
-  bt_id="${bt_addr_table[$id]}"
+  bt_id=$(printf "%02d" $id)
   bus_id="${bus_table[$id]}"
   dev_id="${device_table[$id]}"
 
@@ -304,22 +311,27 @@ robot_test() {
   d_port_l="/dev/d_l_$bt_id"
   d_port_r="/dev/d_r_$bt_id"
 
-  bt_address_l="${bt_id}${bt_address_suffix_l}"
-  bt_address_r="${bt_id}${ble_address_suffix}"
-  ble_address_l="${bt_id}${ble_address_suffix}"
-  ble_address_r="${bt_id}${ble_address_suffix}"
+  # bt_address_l="${bt_id}34${bt_id}${bt_id}${bt_address_suffix_l}"
+  # bt_address_r="${bt_id}34${bt_id}${bt_id}${ble_address_suffix}"
+  # ble_address_l="${bt_id}34${bt_id}${bt_id}${ble_address_suffix}"
+  # ble_address_r="${bt_id}34${bt_id}${bt_id}${ble_address_suffix}"
+
+  bt_address_l="${bt_id}${bt_id}${bt_id}${bt_id}${bt_id}${bt_address_suffix_l}"
+  bt_address_r="${bt_id}${bt_id}${bt_id}${bt_id}${bt_id}${ble_address_suffix}"
+  ble_address_l="${bt_id}${bt_id}${bt_id}${bt_id}${bt_id}${ble_address_suffix}"
+  ble_address_r="${bt_id}${bt_id}${bt_id}${bt_id}${bt_id}${ble_address_suffix}"
 
   factory_file_l="${factory_file_folder}/factory_l_${bt_id}.bin"
   factory_file_r="${factory_file_folder}/factory_r_${bt_id}.bin"
 
-  log_dir=${log_folder}/bt_${bt_addr_table[$id]}
+  log_dir=${log_folder}/bt_${bt_id}
 
   trap cleanup SIGINT
 
   if [ "$DestTestFirstRobotName" = "test_battery" ]; then
-    output="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_${i}.xml"
-    log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log_${i}.html"
-    report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report_${i}.html"
+    output="${log_dir}/${DestTestFirstRobotName}_${bt_id}_${i}.xml"
+    log="${log_dir}/${DestTestFirstRobotName}_${bt_id}_log_${i}.html"
+    report="${log_dir}/${DestTestFirstRobotName}_${bt_id}_report_${i}.html"
 
     robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
       -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
@@ -328,6 +340,8 @@ robot_test() {
       -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
       -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot_path}" &
     pid_list[$id]=$!
+
+    sleep 2
     wait
   else
     for ((i = 1; i <= test_count; i++)); do
@@ -336,9 +350,9 @@ robot_test() {
         log="NONE"
         report="NONE"
       else
-        output="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_${i}.xml"
-        log="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_log_${i}.html"
-        report="${log_dir}/${DestTestFirstRobotName}_${bt_addr_table[$id]}_report_${i}.html"
+        output="${log_dir}/${DestTestFirstRobotName}_${bt_id}_${i}.xml"
+        log="${log_dir}/${DestTestFirstRobotName}_${bt_id}_log_${i}.html"
+        report="${log_dir}/${DestTestFirstRobotName}_${bt_id}_report_${i}.html"
       fi
 
       if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
@@ -356,6 +370,7 @@ robot_test() {
         -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot_path}" &
       pid_list[$id]=$!
       wait
+      sleep 2
       # if [ $? -ne 0 ]; then
       #   print_red "Test Case:  ${DestTestCaseStr}"
       #   print_red "Test Fail!!!"
@@ -364,9 +379,9 @@ robot_test() {
 
       #if we have second robot test
       if [ ! -z ${DestTestSecondRobotName} ]; then
-        output="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_${i}.xml"
-        log="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_log_${i}.html"
-        report="${log_dir}/${DestTestSecondRobotName}_${bt_addr_table[$id]}_report_${i}.html"
+        output="${log_dir}/${DestTestSecondRobotName}_${bt_id}_${i}.xml"
+        log="${log_dir}/${DestTestSecondRobotName}_${bt_id}_log_${i}.html"
+        report="${log_dir}/${DestTestSecondRobotName}_${bt_id}_report_${i}.html"
 
         if [ "$DestTestFirstRobotName" = "test_burn_ha" ]; then
           factory=1
@@ -377,12 +392,14 @@ robot_test() {
           -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot2_path}" &
         pid_list2[$id]=$!
         wait
+        sleep 2
         # if [ $? -ne 0 ]; then
         #   print_red "Test Case:  ${DestTestCaseStr}"
         #   print_red "Test Fail!!!"
         #   exit 1
         # fi
       else
+        #only the first count test need to change factory mode to release if needed
         factory=0
       fi
     done
@@ -404,24 +421,25 @@ create_log() {
   if [ "${ChooseDestTestCaseNum}" != 0 ]; then
     for id in "${id_list[@]}"; do
 
+      bt_id=$(printf "%02d" $id)
       status="${status_table[$id]}"
       if [ "${status}" = 0 ]; then
         # echo "Deivce: $id is not set up, please check."
         continue
       fi
 
-      log_dir=${log_folder}/bt_${bt_addr_table[$id]}
+      log_dir=${log_folder}/bt_${bt_id}
       if [ "$(ls -A ${log_dir}/*.xml)" ]; then
         cp ${log_dir}/*.xml ${total_folder}
       else
         continue
       fi
 
-      if [ "$(ls -A ${serial_logs_folder}/*_${bt_addr_table[$id]}.txt)" ]; then
-        mv ${serial_logs_folder}/*_${bt_addr_table[$id]}.txt ${serial_folder}
+      if [ "$(ls -A ${serial_logs_folder}/*_${bt_id}.txt)" ]; then
+        mv ${serial_logs_folder}/*_${bt_id}.txt ${serial_folder}
       fi
       func_name=$(echo ${SupportTestCases[$ChooseDestTestCaseNum]} | cut -d: -f2)
-      rebot --name Combined --log ${summary_folder}/${func_name}_${bt_addr_table[$id]}_log.html --report ${summary_folder}/${func_name}_${bt_addr_table[$id]}_report.html ${log_dir}/*.xml
+      rebot --name Combined --log ${summary_folder}/${func_name}_${bt_id}_log.html --report ${summary_folder}/${func_name}_${bt_id}_report.html ${log_dir}/*.xml
     done
 
     if [ "$(ls -A ${total_folder})" ]; then
@@ -449,6 +467,7 @@ env_prepare
 test_set
 trap cleanup SIGINT
 wait
+sleep 2
 
 print_green "All threads quit..."
 create_log

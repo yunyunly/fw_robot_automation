@@ -128,7 +128,7 @@ class AudioLib(object):
         if len(self.id_list)==0 :
             raise Exception("No Device Id Found")
 
-        command=f"pactl set-card-profile {str(self.id_list[0])} headset_head_unit && paplay {filepath}"
+        command=f"pactl set-card-profile {str(self.id_list[0])} handsfree_head_unit && paplay {filepath}"
         process_id = 0
         try:
             process = subprocess.Popen(command, shell=True,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

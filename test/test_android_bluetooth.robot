@@ -10,7 +10,7 @@ Resource          ../resource/ha_utils.resource
 
 
 ***Variables***
-${android_name}    RF8N103W59D
+${android_name}    R38M20B9D2R
 ${socket_port}    65432
 ${ha_addr}    0:0:0
 
@@ -41,11 +41,13 @@ Read General Status
     Log Mcu Freq    M33
 
 Audio play a2dp
+#wait wear on
+    
     Log To Console      Normal and Bf_off
     Switch Beamforming  Off  
     Switch Mode         Normal
     Android A2dp Start       
-    Sleep  5s
+    Sleep  10s
     Log Mcu Freq    M55
     Android A2dp Stop      
 
@@ -55,7 +57,7 @@ Audio play a2dp
     Switch Beamforming  On
     Switch Mode         Normal
     Android A2dp Start      
-    Sleep  5s 
+    Sleep  10s 
     Log Mcu Freq    M55
     Android A2dp Stop     
 
@@ -65,7 +67,7 @@ Audio play a2dp
     Switch Beamforming  Off 
     Switch Mode         Innoise
     Android A2dp Start      
-    Sleep  5s 
+    Sleep  10s 
     Log Mcu Freq    M55
     Android A2dp Stop    
     
@@ -76,7 +78,7 @@ Audio play a2dp
     Switch Mode         Innoise
     Android A2dp Start  
 
-    Sleep  5s 
+    Sleep  10s 
     Log Mcu Freq    M55
     Android A2dp Stop      
 	
@@ -89,7 +91,7 @@ Audio play hfp
     Switch Beamforming  Off  
     Switch Mode         Normal
     Android Hfp Start
-    Sleep  5s
+    Sleep  10s
     Log Mcu Freq    M55
     Android Hfp Stop
 
@@ -99,7 +101,7 @@ Audio play hfp
     Switch Beamforming  On
     Switch Mode         Normal
     Android Hfp Start
-    Sleep  5s 
+    Sleep  10s 
     Log Mcu Freq    M55
     Android Hfp Stop
 
@@ -109,7 +111,7 @@ Audio play hfp
     Switch Beamforming  Off 
     Switch Mode         Innoise
     Android Hfp Start
-    Sleep  5s 
+    Sleep  10s 
     Log Mcu Freq    M55
     Android Hfp Stop
 
@@ -119,7 +121,7 @@ Audio play hfp
     Switch Beamforming  On
     Switch Mode         Innoise
     Android Hfp Start
-    Sleep  5s 
+    Sleep  10s 
     Log Mcu Freq    M55
     Android Hfp Stop
     Sleep  5s
@@ -137,11 +139,62 @@ Audio play hfp
 *** Keywords ***
 Setup   
     Init Board    ${bus_id}    ${dev_id}    ${s_port_l}    ${s_port_r}    ${d_port_l}    ${d_port_r}    ${factory_mode} 
+    # Check Init Soc
     Set Android Device    ${android_name}    ${socket_port}
     Start Server
-    Bluetooth Pair   ${ble_address_l}   ${ble_address_r}    ${bt_address_l}    ${bt_address_r} 
-    Connect Bluetooth    ${ble_address_l} 
+    
+    Log    "Wait Server stable..."
+    Sleep    5s
+    # Bluetooth Pair   ${ble_address_l}   ${ble_address_r}    ${bt_address_l}    ${bt_address_r} 
+    Connect Bluetooth    ${ble_address_r}    ${bt_address_r} 
+    Log    Test Start; id:${test_id}; count:${test_count}    console=True
 
 Teardown
+    Disconnect Bluetooth    ${ble_address_r}    
     Stop Android
     Deinit Board
+    Log    Wait deinit...    console=True
+
+    Sleep    60s
+    Log    Quit successfully...    console=True    
+
+Connect Bluetooth    
+    [Arguments]    ${ble_address_r}    ${bt_address_r}
+    ${tmp}=    Addr Insert Colon   ${ble_address_r}
+    Set Suite Variable    ${ble_address_r}    ${tmp}
+
+
+    Starton Device    
+    Reset Device
+    Send BoxOpen
+    Send Heartbeat    10   
+
+    # adv will make bt disconnect
+    # Send Adv
+
+
+    FOR    ${bt_counter}   IN RANGE  3
+    Log To Console    Connect bredr for ${bt_counter}-th try
+    Sleep    3s
+    ${ret}=    Bt Connect Ha   ${ble_address_r}
+    Log To Console    Connect bredr status: ${ret}
+    Run Keyword If    ${ret} == True    Exit For Loop
+    Sleep    3s
+    END
+    Should Be True    ${ret} == True
+    
+    FOR    ${ble_counter}   IN RANGE  3
+    Log To Console    Connect le for ${ble_counter}-th try
+   	${ret}=    Ble Connect Ha   ${ble_address_r}
+    Log To Console    Connect le status: ${ret}
+    Run Keyword If    ${ret} == True    Exit For Loop
+    Sleep    3s
+    END 
+    Should Be True    ${ret} == True
+
+
+Disconnect Bluetooth
+    [Arguments]    ${ble_address_r}
+    ${tmp}=    Addr Insert Colon   ${ble_address_r}
+    Set Suite Variable    ${ble_address_r}    ${tmp}
+    Ble Disconnect Ha    ${ble_address_r}   

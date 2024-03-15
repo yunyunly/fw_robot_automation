@@ -13,7 +13,6 @@ ${test_id}    1
 
 *** Test Cases ***
 Charge Device
-    Log To Console    Charge Device
     Charge    Off    lr
     Sleep     0.5s
     Charge    On    lr

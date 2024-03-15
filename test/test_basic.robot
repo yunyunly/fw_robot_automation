@@ -141,7 +141,7 @@ Check Bluetooth Pairing And Broadcast
     Should Be True    '${ret}[Left][0]'!='None' or '${ret}[Right][0]'!='None'
 
     # Add when bug fixed 
-    # Should Be True    '${ret}[Left][1]'=='None' and '${ret}[Right][1]'=='None'
+    Should Be True    '${ret}[Left][1]'=='None' and '${ret}[Right][1]'=='None'
 
     Shutdown Device 
     Sleep     3s

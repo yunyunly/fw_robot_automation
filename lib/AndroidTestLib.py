@@ -191,6 +191,9 @@ class AndroidTestLib:
                             break
                         msg = data.decode()
                         self.__handle_message(msg)
+                        if msg.endswith("No audio device found\n"):
+                            raise SystemError("Fatal: no bluetooth audio device found.")
+                            
                         
         def heartbeat_thread():
             while self.androidConnected:
@@ -205,7 +208,8 @@ class AndroidTestLib:
         while not self.androidConnected:
             if not thread.is_alive():
                 Console("Server thread terminated.")
-                return
+                raise SystemError("Fatal: Server thread terminated.")
+                #return
             time.sleep(1)
         heartbeat_thread = threading.Thread(target=heartbeat_thread)
         self.heartBeatThread = heartbeat_thread
