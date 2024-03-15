@@ -1,4 +1,6 @@
+import signal
 import socket
+import sys
 import time
 import threading
 import subprocess
@@ -125,7 +127,7 @@ class AndroidTestLib:
         """
         Command Android to start HFP audio streaming
         """
-        self.__send_message(f"hfp start {self.androidBleConnected}")
+        self.__send_message(f"hfp play {self.androidBleConnected}")
         
     def android_hfp_stop(self):
         """
@@ -153,6 +155,12 @@ class AndroidTestLib:
             Console(f"Command failed with exit code {e.returncode}. Error: {e.stderr}, cmd: {cmd}")
 
     def start_server(self, host='127.0.0.1'):
+        def signal_handler(sig, frame):
+            print('Stopping server...')
+            self.stop_android()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
         def server_thread():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.bind((host, self.socketPort))
@@ -167,7 +175,7 @@ class AndroidTestLib:
                     self.stop_android()
                     return
                 self.androidSocket = conn
-                self.androidSocket.settimeout(15)
+                self.androidSocket.settimeout(10)
                 self.androidConnected = True
                 with conn:
                     Console(f"Connected by {addr}")
