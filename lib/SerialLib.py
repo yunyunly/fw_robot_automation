@@ -446,7 +446,7 @@ class SerialFetcher(threading.Thread):
                     self._stop_event.clear()
                     break
                 if self.serial.readable():
-                    print("in waiting", self.serial.in_waiting)
+                    # print("in waiting", self.serial.in_waiting)
                     data = self.serial.read(self.serial.in_waiting or 1)
                     if data:
                         mess = data.decode(ENCODE)

@@ -154,6 +154,13 @@ Init Board
     # Starton Device
     # Send Heartbeat
 
+Init Board Without Single Serial
+    [Arguments]    ${bus_id}    ${dev_id}    ${d_port_l}    ${d_port_r}    ${factory_mode}
+    Log Basic Info    ${bus_id}    ${dev_id}    NULL    NULL    ${d_port_l}    ${d_port_r}    ${factory_mode}
+    Open Device With Bus    ${bus_id}    ${dev_id}  
+    Serial Open Hearing Aids 1152000    ${d_port_l}    ${d_port_r}    
+    # Run Keyword If    ${factory_mode}    Check Factory Mode    
+
 Bluetooth Pair
     [Arguments]    ${ble_address_l}    ${ble_address_r}     ${bt_address_l}    ${bt_address_r}     
     Starton Device
@@ -231,6 +238,10 @@ Deinit Board
     SerialTearDown
     Close Ftdi
 
+Deinit Board Without Single Serial
+    Serial Close Hearing Aids 1152000
+    Close Ftdi
+    
 Shutdown Device 
     Serial write hex    s_Left    010100
     Serial write hex    s_Right   010100

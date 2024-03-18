@@ -175,7 +175,7 @@ class AndroidTestLib:
                     self.stop_android()
                     return
                 self.androidSocket = conn
-                self.androidSocket.settimeout(10)
+                self.androidSocket.settimeout(15)
                 self.androidConnected = True
                 with conn:
                     Console(f"Connected by {addr}")

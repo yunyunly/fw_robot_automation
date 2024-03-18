@@ -34,6 +34,7 @@ SupportTestCases=(
   "BURN_AND_BASIC_TEST:burn_ha_and_basic_test:test_burn_ha:test_basic"
   "BURN_AND_ANDROID_BLUETOOTH_TEST:burn_ha_and_android_bluetooth_test:test_burn_ha:test_android_bluetooth"
   "SHIPPING_MODE_TEST:shipping_mode_test:test_shipping_mode"
+  "FACTORY_TEMPERATURE_TEST:factory_temperature_test:test_factory_temperature"
 )
 
 tcnt=0
@@ -227,46 +228,51 @@ env_prepare() {
   total_folder="${output}/total/"
   summary_folder="${output}/summary/"
   serial_folder="${output}/serial_logs/"
+  console_folder="${output}/console_logs/"
 
-  if [ "${ChooseDestTestCaseNum}" != 0 ]; then
-    if [ -d "${output}" ]; then
-      if [ "${cleantest}" = 1 ]; then
-        print_yellow "Clean output: ${output}."
-        rm -rf "${log_folder}"
-        rm -rf "${total_folder}"
-        rm -rf "${summary_folder}"
-        rm -rf "${serial_folder}"
+  # if [ "${ChooseDestTestCaseNum}" != 0 ]; then
+  if [ -d "${output}" ]; then
+    if [ "${cleantest}" = 1 ]; then
+      print_yellow "Clean output: ${output}."
+      rm -rf "${log_folder}"
+      rm -rf "${total_folder}"
+      rm -rf "${summary_folder}"
+      rm -rf "${serial_folder}"
+      rm -rf "${console_folder}"
 
-        if [ "$(ls -A ${output}/total_log.html)" ]; then
-          rm ${output}/total_log.html
-        fi
-        if [ "$(ls -A ${output}/total_report.html)" ]; then
-          rm ${output}/total_report.html
-        fi
-
-        mkdir -p ${total_folder}
-        mkdir -p ${summary_folder}
-        mkdir -p ${serial_folder}
-      else
-        print_red "Output: ${output} already exists, add --clean to use the same folder or use another folder."
-        exit 1
+      if [ "$(ls -A ${output}/total_log.html)" ]; then
+        rm ${output}/total_log.html
       fi
+      if [ "$(ls -A ${output}/total_report.html)" ]; then
+        rm ${output}/total_report.html
+      fi
+
+      mkdir -p ${total_folder}
+      mkdir -p ${summary_folder}
+      mkdir -p ${serial_folder}
+      mkdir -p ${console_folder}
     else
-      mkdir -p "$output"
-      if [ -d "$output" ]; then
-        log_folder="${output}/logs/"
-        total_folder="${output}/total/"
-        summary_folder="${output}/summary/"
-        serial_folder="${output}/serial_logs/"
-        mkdir -p ${total_folder}
-        mkdir -p ${summary_folder}
-        mkdir -p ${serial_folder}
-      else
-        print_red "Can not create log dir: $output, using --output [output_dir]".
-        exit 1
-      fi
+      print_red "Output: ${output} already exists, add --clean to use the same folder or use another folder."
+      exit 1
+    fi
+  else
+    mkdir -p "$output"
+    if [ -d "$output" ]; then
+      log_folder="${output}/logs/"
+      total_folder="${output}/total/"
+      summary_folder="${output}/summary/"
+      serial_folder="${output}/serial_logs/"
+      console_folder="${output}/console_logs/"
+      mkdir -p ${total_folder}
+      mkdir -p ${summary_folder}
+      mkdir -p ${serial_folder}
+      mkdir -p ${console_folder}
+    else
+      print_yellow "No output log dir: $output, using --output [output_dir] or no log output".
+      # exit 1
     fi
   fi
+  # fi
 }
 
 cleanup() {
@@ -328,24 +334,39 @@ robot_test() {
 
   trap cleanup SIGINT
 
-  if [ "$DestTestFirstRobotName" = "test_battery" ]; then
-    output="${log_dir}/${DestTestFirstRobotName}_${bt_id}_${i}.xml"
-    log="${log_dir}/${DestTestFirstRobotName}_${bt_id}_log_${i}.html"
-    report="${log_dir}/${DestTestFirstRobotName}_${bt_id}_report_${i}.html"
+  #for count inside test
+  if [ "$DestTestFirstRobotName" = "test_battery" ] || [ "$DestTestFirstRobotName" = "test_factory_temperature" ]; then
 
-    robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
-      -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
-      -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} \
-      -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
-      -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
-      -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" "${test_robot_path}" &
+    if [ ! -d "$output" ]; then
+      output="NONE"
+      log="NONE"
+      report="NONE"
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
+        -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
+        -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} \
+        -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+        -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
+        -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" ${test_robot_path} &
+    else
+      output="${log_dir}/${DestTestFirstRobotName}_${bt_id}.xml"
+      log="${log_dir}/${DestTestFirstRobotName}_${bt_id}_log.html"
+      report="${log_dir}/${DestTestFirstRobotName}_${bt_id}_report.html"
+      txt="${console_folder}/${DestTestFirstRobotName}_${bt_id}.txt"
+      robot -v test_id:${id} -v bus_id:${bus_id} -v dev_id:${dev_id} -v test_count:${test_count} -v factory_mode:${factory} \
+        -v ota_bin:${ota_bin} -v program_bin:${program_bin} -v bes_bin:${burn_bin} \
+        -v factory_file_l:${factory_file_l} -v factory_file_r:${factory_file_r} \
+        -v s_port_l:${s_port_l} -v s_port_r:${s_port_r} -v d_port_l:${d_port_l} -v d_port_r:${d_port_r} \
+        -v ble_address_l:${ble_address_l} -v ble_address_r:${ble_address_r} -v bt_address_l:${bt_address_l} \
+        -v bt_address_r:${bt_address_r} --output "${output}" --log "${log}" --report "${report}" ${test_robot_path} >${txt} &
+    fi
+
     pid_list[$id]=$!
 
     sleep 2
     wait
   else
     for ((i = 1; i <= test_count; i++)); do
-      if [ "$ChooseDestTestCaseNum" -eq 0 ]; then
+      if [ ! -d "$output" ]; then
         output="NONE"
         log="NONE"
         report="NONE"
@@ -418,9 +439,8 @@ test_set() {
 }
 
 create_log() {
-  if [ "${ChooseDestTestCaseNum}" != 0 ]; then
+  if [ -d "$output" ]; then
     for id in "${id_list[@]}"; do
-
       bt_id=$(printf "%02d" $id)
       status="${status_table[$id]}"
       if [ "${status}" = 0 ]; then
@@ -454,6 +474,10 @@ create_log() {
     if [ ! "$(ls -A ${summary_folder})" ]; then
       rm -rf ${summary_folder}
     fi
+    if [ ! "$(ls -A ${console_folder})" ]; then
+      rm -rf ${console_folder}
+    fi
+
     rm -rf ${total_folder}
     if [ ! "$(ls -A ${output})" ]; then
       print_red "No output in ${output}, remove the folder"
