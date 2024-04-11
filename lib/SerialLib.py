@@ -40,8 +40,8 @@ class SerialDevice(object):
     - waiting_thread: a thread to execute all read event in waiting_list
         
     """
-    def __init__(self, port, bard_rate):
-        self.logger: SerialLogger = SerialLogger(port, bard_rate)
+    def __init__(self, port, baud_rate):
+        self.logger: SerialLogger = SerialLogger(port, baud_rate)
         self.waiting_list = []
         self.waiting_thread = None
     
@@ -56,7 +56,7 @@ class SerialLib(object):
     
     default:
     port: /dev/ttyACM0
-    bard rate: 115200 
+    baud rate: 115200 
     """
     ROBOT_LIBRARY_SCOPE = 'SUITE'
     def __init__(self):
@@ -67,21 +67,21 @@ class SerialLib(object):
             cls.instance = super(SerialLib, cls).__new__(cls)
         return cls.instance
 
-    def serial_open_port(self, tag, port, bard_rate):
+    def serial_open_port(self, tag, port, baud_rate):
         """Open a serial port.
 
         Args:
             tag (Str): The tag name of the serial port.
             port (Str): The port name of the serial port.
-            bard_rate (Str): The bard rate of the serial port.
+            baud_rate (Str): The baud rate of the serial port.
         
         Examples:
         | Serial Open Port | Case | /dev/ttyACM0 | 115200 |
         """
-        print("open port", tag, port, bard_rate)
+        print("open port", tag, port, baud_rate)
         if tag in self.serialDevices:
             self.serial_close_port(tag)
-        self.serialDevices[tag] = SerialDevice(port=port, bard_rate=bard_rate)
+        self.serialDevices[tag] = SerialDevice(port=port, baud_rate=baud_rate)
         print("open port done", tag)
         return
 
@@ -478,7 +478,7 @@ class SerialFetcher(threading.Thread):
 
 class SerialLogger(object):
 
-    def __init__(self, port, bard_rate):
+    def __init__(self, port, baud_rate):
         print("  to construct", self.__class__.__name__)
         created_time = datetime.datetime.now().strftime('%02H-%02M-%02S')
         pwd = os.path.dirname(os.path.abspath(__file__))
@@ -489,7 +489,7 @@ class SerialLogger(object):
         log_file = os.path.join(serial_log_dir, f"{created_time}-{port}.txt".replace('/dev/', ''))
         
         self.cache = []
-        self.fetcher = SerialFetcher(port, bard_rate, log_file, self.cache)
+        self.fetcher = SerialFetcher(port, baud_rate, log_file, self.cache)
         self.next = 0
         self.fetcher.start()
         self.fetcher.wait_until_running()
