@@ -188,6 +188,65 @@ class BurnLib:
         time.sleep(0.5)
         self.prelude.charge("off", device)
         return 0
+    
+    def reset_orka_by_5v(
+        self,
+        prelude_id: str="1",
+        device:str="lr",
+    ):
+        """ Reset orka device by 5v.
+            Args:
+                device: device to burn, 'l' or 'r' or 'lr'
+        """
+        device = device.lower()
+
+        if self.prelude is None:
+            self.prelude = PreludeControlLib.PreludeControlLib()
+            self.prelude.open_device(prelude_id)
+        if "l" not in device and "r" not in device:
+            raise ValueError("No valid device ('L' or 'R' or 'LR') found.")
+        self.prelude.charge("on", device)
+        time.sleep(0.5)
+        print('***** start reset ******')
+        # ...0101 0100 1101 010...
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        time.sleep(0.005)
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        time.sleep(0.005)
+
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        time.sleep(0.005)
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+
+        self.prelude.charge("on", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        time.sleep(0.005)
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        
+        time.sleep(0.005)
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        time.sleep(0.005)
+        self.prelude.charge("off", device)
+        time.sleep(0.005)
+        self.prelude.charge("on", device)
+        time.sleep(0.5)
+        self.prelude.charge("off", device)
+        print('***** end reset ******')
+        return 0
         
     def burn_orka_with_bus(
         self,
@@ -302,6 +361,6 @@ class BurnLib:
             if not any(self.burning.values()):
                 break
         return 0
-# if __name__ == "__main__":
-#     burn = BurnLib()
-#     burn.burn(device="lr", erase_chip="erase_chip")
+if __name__ == "__main__":
+    burn = BurnLib()
+    burn.reset_orka_by_5v(device="lr")
